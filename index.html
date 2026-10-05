@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Romana Idress Ekfa — Full Stack Laravel Developer</title>
+  <meta name="description" content="Portfolio of Romana Idress Ekfa — Full Stack Web Developer & Laravel specialist crafting ERP, e-commerce and LMS platforms from Dhaka, Bangladesh." />
+  <meta name="author" content="Romana Idress Ekfa" />
+  <link rel="icon" type="image/png" href="/favicon-64.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Romana Idress Ekfa — Full Stack Laravel Developer" />
+  <meta property="og:description" content="Full Stack Web Developer & Laravel specialist crafting ERP, e-commerce and LMS platforms from Dhaka, Bangladesh." />
+  <meta property="og:url" content="https://romanaidress-portfolio.vercel.app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+  <link rel="preconnect" href="https://slfmenzgjbbegrpzfdql.supabase.co" crossorigin />
+  <!-- fonts load without blocking the first paint (text shows in a fallback font, then swaps) -->
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </noscript>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="glows"><div class="glow g1"></div><div class="glow g2"></div></div>
+  <!-- full-page ice background -->
+  <div class="ice-bg" aria-hidden="true">
+    <div class="sky-layer">
+      <span class="cloud c1"></span>
+      <span class="cloud c2"></span>
+      <span class="cloud c3"></span>
+    </div>
+    <svg class="mountains" viewBox="0 0 1440 420" preserveAspectRatio="none">
+      <path d="M0 420 L0 250 L230 90 L430 240 L610 120 L820 300 L1010 160 L1230 300 L1440 200 L1440 420 Z" fill="#C4D6EA"/>
+      <path d="M0 420 L0 320 L260 200 L470 320 L690 220 L900 350 L1130 250 L1440 340 L1440 420 Z" fill="#DCE7F4"/>
+      <!-- snow caps -->
+      <path d="M230 90 L280 128 L245 140 L205 128 Z" fill="#ffffff"/>
+      <path d="M610 120 L660 158 L625 168 L580 156 Z" fill="#ffffff"/>
+      <path d="M1010 160 L1055 194 L1020 204 L980 192 Z" fill="#ffffff"/>
+    </svg>
+    <div class="ice-hills"></div>
+    <div class="pines">
+      <span class="pine" style="left:2%;bottom:9%;--h:110px"></span>
+      <span class="pine" style="left:6%;bottom:5%;--h:80px"></span>
+      <span class="pine" style="left:10%;bottom:11%;--h:70px"></span>
+      <span class="pine" style="right:3%;bottom:8%;--h:120px"></span>
+      <span class="pine" style="right:7%;bottom:5%;--h:82px"></span>
+      <span class="pine" style="right:11%;bottom:12%;--h:66px"></span>
+    </div>
+    <div class="snow" id="snow"></div>
+  </div>
+
+  <nav class="nav" id="nav">
+    <div class="nav-inner" id="navInner">
+      <a href="#top" class="brand"><img src="/logo-sm.png" width="203" height="60" alt="EKFA — Romana Idress Ekfa" /></a>
+      <div class="nav-links">
+        <a href="#work">Work</a><a href="#services">Services</a>
+        <a href="#experience">Experience</a><a href="#reviews">Reviews</a><a href="#faq">FAQ</a>
+        <a class="only-mobile" data-cv target="_blank" rel="noopener">Download CV</a>
+        <a class="only-mobile" data-resume target="_blank" rel="noopener">Resume</a>
+      </div>
+      <div class="nav-right">
+        <a id="cvBtn" class="navpill" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg> CV</a>
+        <a id="resumeBtn" class="navpill" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Resume</a>
+        <button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <div class="hero-bg">
+      <div class="hero-glow ga"></div>
+      <div class="hero-glow gb"></div>
+      <svg class="hero-ribbons" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="34"/></filter>
+        </defs>
+        <g filter="url(#soft)">
+          <path class="rb rb1" d="M-120 420 C 250 250, 600 560, 900 380 S 1400 260, 1620 420" stroke="#ffffff" stroke-opacity="0.55" stroke-width="72" fill="none" stroke-linecap="round"/>
+          <path class="rb rb2" d="M-120 510 C 300 630, 650 340, 1000 520 S 1450 610, 1620 470" stroke="#cfcfcf" stroke-opacity="0.4" stroke-width="52" fill="none" stroke-linecap="round"/>
+          <path class="rb rb3" d="M-120 330 C 350 200, 700 450, 1050 300 S 1500 380, 1620 300" stroke="#ffffff" stroke-opacity="0.32" stroke-width="42" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="wrap">
+      <span class="hpill reveal"><span class="dot"></span> This is Romana Idress Ekfa</span>
+      <h1 class="reveal">Full-Stack Software Engineer<span class="grad">&amp; Digital Architect</span></h1>
+      <p class="lead reveal">I build scalable, high-performance web applications and fluid interactive digital experiences. Specializing in modern full-stack architectures that solve real-world problems.</p>
+      <div class="hero-socials reveal" id="heroSocials"><a class="spill" href="https://github.com/RomanaIdressEkfa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.6.5.5 5.6.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.6 18.4.5 12 .5z"></path></svg> GitHub</a><a class="spill" href="https://www.facebook.com/romanaidressekfa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z"></path></svg> Facebook</a><a class="spill" href="https://wa.me/8801714893870" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.3A10 10 0 1 0 12 2z"></path></svg> WhatsApp</a><a class="spill" href="https://www.linkedin.com/in/romanaidressekfa/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 0 5 8.5a2.5 2.5 0 0 0-.02-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2 3.77-2 4 0 4.75 2.6 4.75 6V21H18.5v-5.3c0-1.3 0-2.9-1.8-2.9s-2.05 1.4-2.05 2.8V21H10z"></path></svg> LinkedIn</a></div>
+      <div class="scrollrow reveal"><span>Scroll down</span><i class="ln"></i><span class="m"></span><i class="ln"></i><span>to see projects</span></div>
+    </div>
+  </header>
+
+  <div class="marquee"><div class="track" id="marquee"></div></div>
+
+  <!-- STORY (pinned scroll-reveal) -->
+  <section class="sec story" id="story">
+    <div class="story-bg"></div>
+    <div class="wrap">
+      <span class="eyebrow" style="justify-content:center">Get to know me</span>
+      <p class="story-text" id="storyText">I'm Romana — a Full-Stack Laravel Developer from Dhaka. For 3+ years I've built ERP systems, e-commerce platforms and automation, turning complex business problems into clean, scalable software — from database schema to the very last pixel.</p>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="sec" id="about">
+    <div class="wrap about">
+      <div class="reveal">
+        <span class="eyebrow">About Me</span>
+        <div class="big">I build <span class="acc">scalable web applications</span> — from database schema to the last pixel.</div>
+        <p id="aboutBio"></p>
+        <div class="about-skills" id="aboutSkills"></div>
+        <div class="about-cta">
+          <span class="about-badge"><span class="d"></span> Available for work</span>
+          <a href="#contact" class="btn btn-blue">Let's talk
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </div>
+      <div class="about-side reveal" id="aboutStats"></div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="sec" id="services">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="eyebrow">What I Do</span>
+        <h2>Services I provide</h2>
+        <p>End-to-end web engineering — I design, build, integrate and automate.</p>
+      </div>
+      <div class="svc-grid">
+        <div class="svc reveal"><span class="no">01</span><div class="ic">🧩</div><h3>Laravel Development</h3><p>Robust, secure backends with clean MVC architecture, REST APIs, auth and role-based access.</p></div>
+        <div class="svc reveal"><span class="no">02</span><div class="ic">📊</div><h3>ERP &amp; ERPNext</h3><p>Custom ERP modules and ERPNext / Frappe customization tailored to real business workflows.</p></div>
+        <div class="svc reveal"><span class="no">03</span><div class="ic">🛒</div><h3>E-commerce Platforms</h3><p>Multi-vendor stores with secure checkout, payment gateways, inventory and admin dashboards.</p></div>
+        <div class="svc reveal"><span class="no">04</span><div class="ic">⚙️</div><h3>n8n Automation</h3><p>Automated workflows connecting apps, APIs and databases so businesses run on autopilot.</p></div>
+        <div class="svc reveal"><span class="no">05</span><div class="ic">🔌</div><h3>API Integration</h3><p>Third-party, payment gateway and SMS/email integrations with reliable, documented APIs.</p></div>
+        <div class="svc reveal"><span class="no">06</span><div class="ic">🗄️</div><h3>Database Design</h3><p>Normalized schemas, migrations and query tuning on MySQL &amp; PostgreSQL for speed at scale.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORK -->
+  <section class="sec" id="work">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="eyebrow">Recent Works</span>
+        <h2>Selected projects</h2>
+        <p>ERP systems, e-commerce platforms and automation builds — engineered end-to-end. Click any card for details.</p>
+      </div>
+      <div class="work-grid" id="workGrid"></div>
+      <div class="center-btn"><button class="btn btn-out" id="moreBtn">See more projects</button></div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section class="sec" id="experience">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="eyebrow">Experiences</span>
+        <h2>Where I've worked</h2>
+      </div>
+      <div class="xlist" id="xlist"></div>
+    </div>
+  </section>
+
+
+  <!-- REVIEWS -->
+  <section class="sec" id="reviews">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="eyebrow">Client Reviews</span>
+        <h2>What people say</h2>
+        <p>Real feedback from clients and teams who trusted me with their products.</p>
+      </div>
+    </div>
+    <div class="rev-strip"><div class="rev-track" id="revTrack"></div></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="sec" id="faq">
+    <div class="wrap">
+      <div class="sec-head center reveal">
+        <span class="eyebrow">Answers</span>
+        <h2>Frequently asked</h2>
+        <p>Common questions about how I work with clients and teams.</p>
+      </div>
+      <div class="faq reveal">
+        <div class="faq-item"><div class="faq-q">What services do you provide?<span class="pm">+</span></div><div class="faq-a"><p>Full-stack web development — Laravel backends, ERP/ERPNext customization, e-commerce platforms, REST API integration and n8n workflow automation.</p></div></div>
+        <div class="faq-item"><div class="faq-q">How do I start working with you?<span class="pm">+</span></div><div class="faq-a"><p>Reach out via email or WhatsApp with your idea or requirements. I'll reply with a clear plan, timeline and a fair quote before we begin.</p></div></div>
+        <div class="faq-item"><div class="faq-q">How long does a project take?<span class="pm">+</span></div><div class="faq-a"><p>A small site takes 1–2 weeks; a full ERP or e-commerce platform typically 4–10+ weeks depending on scope and integrations.</p></div></div>
+        <div class="faq-item"><div class="faq-q">Do you provide revisions &amp; support?<span class="pm">+</span></div><div class="faq-a"><p>Yes — every project includes revisions during development and post-launch support to keep everything running smoothly.</p></div></div>
+        <div class="faq-item"><div class="faq-q">What technologies do you use?<span class="pm">+</span></div><div class="faq-a"><p>Laravel, PHP, MySQL/PostgreSQL, React/Next.js, ERPNext/Frappe (Python) and n8n for automation.</p></div></div>
+        <div class="faq-item"><div class="faq-q">What industries do you work with?<span class="pm">+</span></div><div class="faq-a"><p>E-commerce, ERP, education (LMS) and business automation — for clients in Bangladesh and abroad.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="sec contact" id="contact">
+    <div class="wrap">
+      <span class="eyebrow reveal" style="justify-content:center">Contact</span>
+      <h2 class="reveal">Interested in<br>working <span class="acc">together?</span></h2>
+      <p class="sub reveal">Have a project, a role, or an idea? I'm one message away — let's make it real.</p>
+      <div class="contact-actions reveal" id="contactActions"></div>
+      <div class="socs reveal" id="contactSocs"></div>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <a href="#top" class="brand"><img src="/logo-sm.png" width="203" height="60" alt="EKFA" loading="lazy" /></a>
+      <span>© <span id="year"></span> Romana Idress Ekfa · Dhaka, Bangladesh</span>
+      <span>Full Stack Laravel Developer</span>
+    </div>
+  </footer>
+
+  <!-- MODAL -->
+  <div class="modal" id="modal">
+    <div class="backdrop" data-close></div>
+    <div class="sheet">
+      <button class="close" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <img class="hero-img" id="mImg" alt="" />
+      <div class="m-body">
+        <span class="m-cat" id="mCat"></span>
+        <h3 id="mTitle"></h3>
+        <p id="mDesc"></p>
+        <div class="techs" id="mTechs"></div>
+        <div class="m-actions" id="mActions"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="/data.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
