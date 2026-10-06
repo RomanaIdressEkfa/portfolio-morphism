@@ -229,6 +229,77 @@ function initFaq(){
   });
 }
 
+function initButtonFX(){
+  document.addEventListener("click",e=>{
+    const btn=e.target.closest(".btn"); if(!btn) return;
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const r=btn.getBoundingClientRect(), cx=e.clientX-r.left, cy=e.clientY-r.top;
+    for(let i=0;i<8;i++){
+      const p=document.createElement("span");
+      p.className="btn-spark";
+      const ang=Math.random()*Math.PI*2, dist=16+Math.random()*24;
+      p.style.left=cx+"px"; p.style.top=cy+"px";
+      p.style.setProperty("--dx",(Math.cos(ang)*dist).toFixed(1)+"px");
+      p.style.setProperty("--dy",(Math.sin(ang)*dist).toFixed(1)+"px");
+      btn.appendChild(p);
+      setTimeout(()=>p.remove(),650);
+    }
+  });
+}
+// ThreeUI GlassAiButton host (vanilla port of GlassAiButton.tsx): the authored HTML runs
+// byte-for-byte in an opaque allow-scripts-only srcdoc iframe, mounted only while the
+// host and tab are visible so WebGL resources are released otherwise.
+function initGlassAiButton(){
+  const host=el("gabHost"); if(!host) return;
+  let src=null, frame=null, hostVisible=false;
+  const load=()=>src?Promise.resolve(src):fetch("/effects/glass-ai-button/glass-ai-button.html?v=20",{cache:"no-cache"}).then(r=>r.text()).then(t=>(src=t));
+  const visible=()=>hostVisible&&!document.hidden;
+  function sync(){
+    if(visible()&&!frame&&!crashed){
+      host.dataset.state="loading";
+      load().then(t=>{
+        if(frame||!visible()) return;
+        const f=document.createElement("iframe");
+        f.title="Glass AI Button"; f.setAttribute("sandbox","allow-scripts"); f.loading="eager"; f.className="gab-frame";
+        // stay on the poster until the scene has drawn its first frames (iframe load fires before that,
+        // and a blank transparent frame shows the page through the pill as a white flash)
+        f.addEventListener("load",()=>{ setTimeout(()=>showLive(f),8000); });
+        f.srcdoc=t; frame=f; host.appendChild(f);
+      }).catch(()=>{ host.dataset.state="paused"; });
+    }
+  }
+  // pointer input on the pill-shaped hit area is forwarded into the frame (the frame ignores the mouse
+  // so its large transparent area never blocks the page; re-clipping it caused white flashes)
+  const hit=el("gabHit");
+  const fwd=(type,e)=>{ if(!frame||!frame.classList.contains("ready")) return; const r=frame.getBoundingClientRect();
+    frame.contentWindow.postMessage({gab:1,type,x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height},"*"); };
+  if(hit){ for(const t of ["pointermove","pointerdown","pointerup"]) hit.addEventListener(t,e=>fwd(t,e));
+    hit.addEventListener("pointerleave",e=>fwd("leave",e)); }
+  let burstTimer=null, lastAlive=0, crashed=false;
+  // watchdog: if the frame stops reporting (e.g. its process crashed and Chrome shows a blank frame),
+  // drop it and keep the still image of the button instead
+  setInterval(()=>{ if(frame&&frame.classList.contains("ready")&&!document.hidden&&Date.now()-lastAlive>12000){
+    frame.remove(); frame=null; crashed=true; host.dataset.state="paused"; host.classList.remove("burst"); } },2500);
+  function showLive(f){ if(frame===f&&!f.classList.contains("ready")){ lastAlive=Date.now(); host.dataset.state="ready"; f.classList.add("ready"); } }
+  addEventListener("message",e=>{
+    if(!frame||e.source!==frame.contentWindow) return;
+    if(e.data==="gab-alive"){ lastAlive=Date.now(); return; }
+    if(e.data==="gab-frame"){ lastAlive=Date.now(); showLive(frame); return; }
+    if(e.data!=="gab-burst") return;
+    host.classList.add("burst"); clearTimeout(burstTimer);
+    burstTimer=setTimeout(()=>host.classList.remove("burst"),2600);
+  });
+  document.addEventListener("visibilitychange",sync);
+  const start=()=>{
+    if(!("IntersectionObserver" in window)){ hostVisible=true; sync(); return; }
+    new IntersectionObserver(([en])=>{ hostVisible=en?en.isIntersecting:true; sync(); },{rootMargin:"80px"}).observe(host);
+  };
+  // a still poster (captured from the real render) shows until the visitor first interacts; then the live
+  // WebGL scene mounts. Keeps the 740 KB renderer off the critical path for first paint and page-speed tests.
+  const evs=["pointermove","pointerdown","touchstart","keydown","wheel","scroll"];
+  const go=()=>{ evs.forEach(ev=>removeEventListener(ev,go,true)); start(); };
+  evs.forEach(ev=>addEventListener(ev,go,{capture:true,passive:true}));
+}
 function initChrome(){
   const nav=el("nav"), navInner=el("navInner");
   addEventListener("scroll",()=>nav.classList.toggle("scrolled",scrollY>30),{passive:true});
@@ -245,13 +316,13 @@ function initGsap(){
   document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("g-done","in"));
   // hero intro — fromTo guarantees a visible end state
   gsap.timeline({defaults:{ease:"power3.out"}})
-    .fromTo(".hero .hpill",{y:20,autoAlpha:0},{y:0,autoAlpha:1,duration:.6},.1)
+    .fromTo("#gabHost",{y:10},{y:0,duration:.6},.1)
     .fromTo(".hero h1",{y:14},{y:0,duration:.8},"-=.3")
     .fromTo(".hero .lead",{y:10},{y:0,duration:.5},"-=.5")
     .fromTo(".hero-socials .spill",{y:22,autoAlpha:0},{y:0,autoAlpha:1,stagger:.08,duration:.5},"-=.35")
     .fromTo(".scrollrow",{autoAlpha:0},{autoAlpha:1,duration:.6},"-=.2");
   // safety: if anything interrupts the timeline, force content visible shortly after
-  setTimeout(()=>document.querySelectorAll(".hero .hpill,.hero h1,.hero .lead").forEach(n=>{n.style.opacity="1";n.style.visibility="visible";}),2600);
+  setTimeout(()=>document.querySelectorAll("#gabHost,.hero h1,.hero .lead").forEach(n=>{n.style.opacity="1";n.style.visibility="visible";}),2600);
 }
 
 /* boot */
@@ -263,7 +334,100 @@ function hydrate(){
   revealObserve(document.querySelectorAll(".reveal"));
   initCounters();
 }
-function boot(){ initGsap(); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); refreshLive();
+/* services: click-to-reveal list -> live preview panel, connected by glowing flow-lines
+   converging on a center node (tablist/tabpanel pattern + an SVG wire diagram overlay) */
+function initSvcTabs(){
+  const container=document.querySelector(".svc-interactive"); if(!container) return;
+  const list=container.querySelector(".svc-list");
+  const preview=container.querySelector(".svc-preview");
+  const shot=container.querySelector(".svc-shot");
+  const svg=container.querySelector(".svc-flow-svg");
+  const node=container.querySelector(".svc-node");
+  const nodeIc=container.querySelector(".svc-node-ic");
+  const items=[...list.querySelectorAll(".svc-item")];
+  const panels=[...container.querySelectorAll(".svc-preview-panel")];
+  const shots=[...container.querySelectorAll(".svc-shot-panel")];
+  let active=0;
+
+  function layoutFlow(){
+    if(!svg||!node) return;
+    if(getComputedStyle(svg).display==="none") return;
+    const cRect=container.getBoundingClientRect();
+    const listRect=list.getBoundingClientRect();
+    const prevRect=preview.getBoundingClientRect();
+    const nodeX=(listRect.right+prevRect.left)/2-cRect.left;
+    const nodeY=cRect.height/2;
+    node.style.left=nodeX+"px"; node.style.top=nodeY+"px";
+    svg.setAttribute("width",cRect.width); svg.setAttribute("height",cRect.height);
+    svg.querySelectorAll("path.fl-line,path.fl-out").forEach(p=>p.remove());
+    items.forEach((it,i)=>{
+      const r=it.getBoundingClientRect();
+      const x0=r.right-cRect.left-16, y0=r.top+r.height/2-cRect.top;
+      const dx=nodeX-x0;
+      const d=`M ${x0} ${y0} C ${x0+dx*.5} ${y0}, ${nodeX-dx*.35} ${nodeY}, ${nodeX} ${nodeY}`;
+      const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("d",d);
+      p.setAttribute("class","fl-line"+(i===active?" on fl-dash":""));
+      svg.appendChild(p);
+    });
+    const pX=prevRect.left-cRect.left, pY=prevRect.top+prevRect.height/2-cRect.top;
+    const midY=(nodeY+pY)/2;
+    const od=`M ${nodeX} ${nodeY} C ${nodeX+40} ${nodeY}, ${pX-40} ${midY}, ${pX} ${midY}`;
+    const op=document.createElementNS("http://www.w3.org/2000/svg","path");
+    op.setAttribute("d",od); op.setAttribute("class","fl-out fl-dash");
+    svg.appendChild(op);
+    if(shot){
+      const shotRect=shot.getBoundingClientRect();
+      if(shotRect.top<prevRect.bottom){ // side-by-side layout only; skip when shot wraps below
+        const qX=prevRect.right-cRect.left, qY=pY;
+        const rX=shotRect.left-cRect.left, rY=shotRect.top+shotRect.height/2-cRect.top;
+        const midY2=(qY+rY)/2;
+        const qd=`M ${qX} ${qY} C ${qX+40} ${qY}, ${rX-40} ${midY2}, ${rX} ${midY2}`;
+        const qp=document.createElementNS("http://www.w3.org/2000/svg","path");
+        qp.setAttribute("d",qd); qp.setAttribute("class","fl-out fl-dash");
+        svg.appendChild(qp);
+      }
+    }
+  }
+
+  const select=i=>{
+    active=i;
+    items.forEach((it,n)=>{ const on=n===i; it.classList.toggle("active",on); it.setAttribute("aria-selected",on?"true":"false"); });
+    panels.forEach((p,n)=>p.classList.toggle("active", n===i));
+    shots.forEach((s,n)=>s.classList.toggle("active", n===i));
+    if(node&&nodeIc){
+      const activeIt=items[i];
+      node.style.setProperty("--c1",activeIt.style.getPropertyValue("--c1"));
+      node.style.setProperty("--c2",activeIt.style.getPropertyValue("--c2"));
+      node.style.background=`linear-gradient(145deg,${activeIt.style.getPropertyValue("--c1")},${activeIt.style.getPropertyValue("--c2")})`;
+      nodeIc.innerHTML=activeIt.querySelector(".ic").innerHTML;
+    }
+    layoutFlow();
+  };
+  items.forEach((it,i)=>{
+    it.addEventListener("mouseenter",()=>select(i));
+    it.addEventListener("click",()=>select(i));
+    it.addEventListener("keydown",e=>{
+      if(e.key==="ArrowDown"||e.key==="ArrowRight"){ e.preventDefault(); const n=(i+1)%items.length; items[n].focus(); select(n); }
+      if(e.key==="ArrowUp"||e.key==="ArrowLeft"){ e.preventDefault(); const n=(i-1+items.length)%items.length; items[n].focus(); select(n); }
+    });
+  });
+  select(0);
+  let resizeT; window.addEventListener("resize",()=>{ clearTimeout(resizeT); resizeT=setTimeout(layoutFlow,120); });
+  setTimeout(layoutFlow,900); // after the scroll-reveal settles, in case it nudged layout
+
+  /* auto-advance one service every 4s while idle; pause on hover/focus, resume on leave */
+  let autoTimer=null;
+  const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const startAuto=()=>{ if(reduceMotion||autoTimer) return; autoTimer=setInterval(()=>select((active+1)%items.length),4000); };
+  const stopAuto=()=>{ clearInterval(autoTimer); autoTimer=null; };
+  container.addEventListener("mouseenter",stopAuto);
+  container.addEventListener("mouseleave",startAuto);
+  container.addEventListener("focusin",stopAuto);
+  container.addEventListener("focusout",startAuto);
+  startAuto();
+}
+function boot(){ initGsap(); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initGlassAiButton(); initSvcTabs(); refreshLive();
   if(hasGSAP()) setTimeout(()=>ScrollTrigger.refresh(),400);
 }
 async function refreshLive(){
