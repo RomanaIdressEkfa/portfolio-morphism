@@ -64,6 +64,34 @@ function renderMarquee(){
   const one = items.map(t=>`<span>${esc(t)}</span>`).join("");
   el("marquee").innerHTML = one+one;
 }
+function renderShotMarquee(){
+  const track=el("shotTrack"); if(!track) return;
+  const shots=["/shots/refs/ref-79.png","/shots/refs/ref-80.png","/shots/refs/ref-81.png","/shots/refs/ref-82.png","/shots/refs/ref-84.png","/shots/refs/ref-85.png","/shots/refs/ref-86.png"];
+  const one = shots.map(src=>`<figure><img src="${src}" loading="lazy" alt=""/></figure>`).join("");
+  track.innerHTML = one+one;
+  initShotArc();
+}
+function initShotArc(){
+  const wrap=document.querySelector(".shot-marquee"); const track=el("shotTrack");
+  if(!wrap||!track) return;
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const figures=[...track.querySelectorAll("figure")];
+  const arcHeight=64, maxTilt=7;
+  function tick(){
+    const wrapRect=wrap.getBoundingClientRect();
+    const midX=wrapRect.left+wrapRect.width/2;
+    figures.forEach(fig=>{
+      const r=fig.getBoundingClientRect();
+      const centerX=r.left+r.width/2;
+      let t=(centerX-midX)/(wrapRect.width/2);
+      t=Math.max(-1.3,Math.min(1.3,t));
+      const rise=Math.max(0,1-t*t);
+      fig.style.transform=`translateY(${(-arcHeight*rise).toFixed(1)}px) rotate(${(t*maxTilt).toFixed(1)}deg)`;
+    });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
 
 function sortedProjects(){
   return [...PROJECTS].sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)||(a.sort_order||0)-(b.sort_order||0));
@@ -330,7 +358,7 @@ function hydrate(){
   PROFILE=(window.PROFILE&&window.PROFILE[0])||window.PROFILE||{};
   PROJECTS=window.PROJECTS||[]; SKILLS=window.SKILLS||[];
   EXPERIENCES=window.EXPERIENCES||[]; TESTIMONIALS=window.TESTIMONIALS||[];
-  renderProfile(); renderMarquee(); renderWork(); renderExperience(); renderReviews();
+  renderProfile(); renderMarquee(); renderShotMarquee(); renderWork(); renderExperience(); renderReviews();
   revealObserve(document.querySelectorAll(".reveal"));
   initCounters();
 }
