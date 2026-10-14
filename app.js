@@ -5,6 +5,7 @@ const WHATSAPP = "8801714893870";
 const EMAIL = "romanaidressekfa@gmail.com";
 // overrides whatever resume_url the Supabase profile table returns — update here, not in the DB
 const RESUME_URL = "https://drive.google.com/file/d/1fO8Qq3UGzx6oFQHZixV0Rl5HL1GRnLyj/view?usp=sharing";
+const CV_URL = "https://drive.google.com/drive/u/0/folders/1p9ybzD6hDcK96RwWVceb7NzNJKmEUOwD";
 
 const el = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -23,10 +24,11 @@ function renderProfile(){
   const p = PROFILE;
   el("aboutBio").textContent = p.bio || "";
   el("year").textContent = new Date().getFullYear();
-  const cv = el("cvBtn"); if(cv){cv.href=RESUME_URL;}
+  const cv = el("cvBtn"); if(cv){cv.href=CV_URL;}
   const rb = el("resumeBtn"); if(rb){rb.href=RESUME_URL;}
   // mobile-menu CV / Resume links
-  document.querySelectorAll("[data-cv],[data-resume]").forEach(a=>{ a.href=RESUME_URL; });
+  document.querySelectorAll("[data-cv]").forEach(a=>{ a.href=CV_URL; });
+  document.querySelectorAll("[data-resume]").forEach(a=>{ a.href=RESUME_URL; });
 
   // hero social pill buttons
   const hs = [
