@@ -3,6 +3,8 @@ const SUPA_URL = "https://slfmenzgjbbegrpzfdql.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsZm1lbnpnamJiZWdycHpmZHFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NTk4NTQsImV4cCI6MjA5MzEzNTg1NH0.m53CnEKfyDdd2Iajma94S-2MqjjCuYWVfjy2UavFrbw";
 const WHATSAPP = "8801714893870";
 const EMAIL = "romanaidressekfa@gmail.com";
+// overrides whatever resume_url the Supabase profile table returns — update here, not in the DB
+const RESUME_URL = "https://drive.google.com/drive/u/0/folders/1p9ybzD6hDcK96RwWVceb7NzNJKmEUOwD";
 
 const el = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -21,10 +23,10 @@ function renderProfile(){
   const p = PROFILE;
   el("aboutBio").textContent = p.bio || "";
   el("year").textContent = new Date().getFullYear();
-  const cv = el("cvBtn"); if(p.resume_url){cv.href=p.resume_url;} else if(cv){cv.style.display="none";}
-  const rb = el("resumeBtn"); if(p.resume_url){rb.href=p.resume_url;} else if(rb){rb.style.display="none";}
+  const cv = el("cvBtn"); if(cv){cv.href=RESUME_URL;}
+  const rb = el("resumeBtn"); if(rb){rb.href=RESUME_URL;}
   // mobile-menu CV / Resume links
-  document.querySelectorAll("[data-cv],[data-resume]").forEach(a=>{ if(p.resume_url){a.href=p.resume_url;} else {a.style.display="none";} });
+  document.querySelectorAll("[data-cv],[data-resume]").forEach(a=>{ a.href=RESUME_URL; });
 
   // hero social pill buttons
   const hs = [
