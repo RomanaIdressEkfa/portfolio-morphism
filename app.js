@@ -152,44 +152,115 @@ function initWorkSlider(list){
     }});
 }
 
+const XP_COLORS=[["#FF6A52","#E6281B"],["#4DAEFF","#0066CC"],["#34D399","#047857"],["#FF7A96","#C72A50"],["#A78BFA","#6D28D9"],["#5F9AC2","#2F5A7A"]];
+const XP_IC='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg>';
 function renderExperience(){
-  el("xlist").innerHTML = EXPERIENCES.map(e=>{
-    const techs = (e.tech||[]).map(t=>`<span>${esc(t)}</span>`).join("");
-    const now = e.is_current
-      ? `<span class="now">Present</span>`
-      : `<span class="endyr">${esc(e.end_date||"")}</span>`;
-    return `<div class="xrow reveal">
-      <div class="yr">${esc(e.start_date||"")} — ${esc(e.end_date||"Present")}</div>
-      <div>
-        <div class="role">${esc(e.role)}</div>
-        <div class="co"><b>${esc(e.company)}</b> · ${esc(e.location||"")}</div>
-        <div class="desc">${esc(e.description||"")}</div>
-        <div class="xtech">${techs}</div>
-      </div>
-      <div>${now}</div>
+  const root=el("xlist"); if(!root) return;
+  if(!EXPERIENCES.length){ root.innerHTML=""; return; }
+  const range=e=>`${esc(e.start_date||"")} — ${e.is_current?"Present":esc(e.end_date||"")}`;
+  const items=EXPERIENCES.map((e,i)=>{
+    const [c1,c2]=XP_COLORS[i%XP_COLORS.length];
+    return `<button class="xp-item${i===0?" active":""}" role="tab" aria-selected="${i===0}" data-i="${i}" style="--c1:${c1};--c2:${c2}">
+      <span class="ic">${XP_IC}</span>
+      <span class="txt"><strong>${esc(e.role)}</strong><small>${esc(e.company)} · ${range(e)}</small></span>
+    </button>`;
+  }).join("");
+  const panels=EXPERIENCES.map((e,i)=>{
+    const [c1,c2]=XP_COLORS[i%XP_COLORS.length];
+    const techs=(e.tech||[]).map(t=>`<span>${esc(t)}</span>`).join("");
+    const now=e.is_current?`<span class="xp-now">Present</span>`:"";
+    return `<div class="xp-preview-panel${i===0?" active":""}" role="tabpanel" data-i="${i}" style="--c1:${c1};--c2:${c2}">
+      <span class="xp-preview-ic">${XP_IC}</span>
+      <span class="xp-preview-no">${String(i+1).padStart(2,"0")}</span>
+      ${now}
+      <h3>${esc(e.role)}</h3>
+      <p class="xp-co"><b>${esc(e.company)}</b> · ${esc(e.location||"")}</p>
+      <p class="xp-range">${range(e)}</p>
+      <p class="xp-desc">${esc(e.description||"")}</p>
+      <div class="xp-tech">${techs}</div>
     </div>`;
   }).join("");
+  root.innerHTML = `<div class="xp-list" role="tablist" aria-label="Experience">${items}</div><div class="xp-preview">${panels}</div>`;
+  const tabs=[...root.querySelectorAll(".xp-item")], ps=[...root.querySelectorAll(".xp-preview-panel")];
+  tabs.forEach(t=>t.addEventListener("click",()=>{
+    const i=t.dataset.i;
+    tabs.forEach(x=>{ const on=x===t; x.classList.toggle("active",on); x.setAttribute("aria-selected",on); });
+    ps.forEach(p=>p.classList.toggle("active",p.dataset.i===i));
+  }));
 }
 
+const REVIEW_METRICS={
+  "Tariqul Islam":"Saved Months of Engineering",
+  "Sumaiya Habib":"Shipped Ahead of Schedule",
+  "Shihab Uddin":"Instant Conversion Jump",
+  "Rashed Khan":"3 Days Into a 5-Min Pipeline",
+  "Nusrat Jahan":"Rock-Solid Production Quality",
+  "Abdullah Al Zubair":"Most Reliable Engineer I've Managed"
+};
+// real photo + corrected name/role for a client, immune to stale Supabase data (same pattern as the CV/Resume pin)
+const REVIEW_OVERRIDES={
+  "Tariqul Islam":{name:"Hamza Bin Hakim",role:"CEO",avatar:"/shots/hamza-bin-hakim.jpg",
+    message:"When my wife and I first saw the website Ekfa designed for Unique Business Systems Ltd, we were genuinely blown away — we ended up revisiting the site five or six times just to admire the design again. It's rare to find a developer with that level of visual taste paired with real engineering skill."}
+};
+// a testimonial not yet in Supabase, pinned locally so it survives a live-data refresh
+const EXTRA_TESTIMONIALS=[{
+  name:"Abdullah Al Zubair",
+  role:"Operational Head",
+  company:"Troubleshoot Limited",
+  message:"Ekfa is the kind of engineer every manager hopes to have on their team. She takes full ownership of every task, flags risks before they become problems, and consistently delivers clean, production-ready work ahead of schedule. Her technical depth in Laravel and ERP systems, paired with how clearly she communicates progress, makes her one of the most reliable people I've managed.",
+  avatar_url:"/shots/abdullah-al-zubair.jpg"
+}];
+const REV_STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.4 7 .7-5.3 4.7 1.6 6.9-6.2-3.7-6.2 3.7 1.6-6.9-5.3-4.7 7-.7z"/></svg>';
+let revTimer=null;
 function renderReviews(){
-  const card = t=>{
-    const av = t.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(t.name||"R")}`;
-    const roleco = [t.role, t.company].filter(Boolean).join(", ");
-    return `<div class="rev">
-      <div class="rev-stars">★★★★★</div>
-      <p class="rev-quote">&ldquo;${esc(t.message||"")}&rdquo;</p>
-      <div class="rev-div"></div>
-      <div class="rev-foot">
-        <span class="rev-av-wrap"><img class="rev-av" src="${esc(av)}" alt="${esc(t.name||"")}" loading="lazy" /></span>
-        <div class="rev-who">
-          <div class="rev-name">${esc(t.name||"")}</div>
-          <div class="rev-role">${esc(roleco)}</div>
+  const caps=el("revCaps"), dots=el("revDots"), carousel=el("revCarousel");
+  const list=[...TESTIMONIALS, ...EXTRA_TESTIMONIALS];
+  if(!caps||!dots||!list.length) return;
+  const stars=Array(5).fill(REV_STAR).join("");
+  caps.innerHTML = list.map((t,i)=>{
+    const metric = REVIEW_METRICS[t.name] || "5-Star Client Feedback";
+    const ov = REVIEW_OVERRIDES[t.name] || {};
+    const name = ov.name || t.name, role = ov.role || t.role, message = ov.message || t.message;
+    const av = ov.avatar || t.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name||"R")}`;
+    const roleco = [role, t.company].filter(Boolean).join(", ");
+    return `<div class="rev-cap${i===0?" active":""}" data-i="${i}" role="button" tabindex="0" aria-label="${esc(name||"")}">
+      <img class="rev-cap-photo" src="${esc(av)}" alt="${esc(name||"")}" loading="lazy"/>
+      <div class="rev-cap-body">
+        <div class="rev-cap-left">
+          <div class="rev-metric">${esc(metric)}</div>
+          <div class="rev-cap-stars">${stars}</div>
+          <p class="rev-cap-quote">&ldquo;${esc(message||"")}&rdquo;</p>
+          <div class="rev-cap-author"><strong>${esc(name||"")}</strong><span>${esc(roleco)}</span></div>
+        </div>
+        <div class="rev-cap-right">
+          <div class="rev-portrait">
+            <img src="${esc(av)}" alt="${esc(name||"")}" loading="lazy"/>
+            ${t.company?`<span class="rev-badge">${esc(t.company)}</span>`:""}
+          </div>
         </div>
       </div>
     </div>`;
-  };
-  const one = TESTIMONIALS.map(card).join("");
-  el("revTrack").innerHTML = one + one; // duplicate for seamless auto-slide
+  }).join("");
+  dots.innerHTML = list.map((_,i)=>`<button class="rev-dot${i===0?" active":""}" type="button" data-i="${i}" aria-label="Show testimonial ${i+1}"></button>`).join("");
+
+  const capEls=[...caps.querySelectorAll(".rev-cap")], dotEls=[...dots.querySelectorAll(".rev-dot")];
+  let active=0;
+  function goTo(i){
+    active=((i%list.length)+list.length)%list.length;
+    capEls.forEach((c,idx)=>c.classList.toggle("active",idx===active));
+    dotEls.forEach((d,idx)=>d.classList.toggle("active",idx===active));
+  }
+  function next(){ goTo(active+1); }
+  function start(){ stop(); revTimer=setInterval(next,5000); }
+  function stop(){ clearInterval(revTimer); revTimer=null; }
+
+  capEls.forEach(c=>{
+    c.addEventListener("click",()=>goTo(+c.dataset.i));
+    c.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); goTo(+c.dataset.i); } });
+  });
+  dotEls.forEach(d=>d.addEventListener("click",()=>goTo(+d.dataset.i)));
+  if(carousel){ carousel.addEventListener("mouseenter",stop); carousel.addEventListener("mouseleave",start); }
+  start();
 }
 
 /* reveal + counters (GSAP if present) */
