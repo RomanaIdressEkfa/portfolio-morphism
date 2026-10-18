@@ -208,25 +208,25 @@ const EXTRA_TESTIMONIALS=[{
   name: "MD Alifuzzaman Alif",
   role: "Merchandiser",
   company: "Al Muslim Group",
-  message: "Romana built a custom Apparel Tracking Software that transformed our order management. The system is intuitive, reliable, and significantly improved transparency with our international buyers.",
+  message: "Ekfa built a custom Apparel Tracking Software that transformed our order management. The system is intuitive, reliable, and significantly improved transparency with our international buyers.",
   avatar_url: "/shots/alif.jpeg"
 },{
   name: "Mustafizur Rahman Khan",
   role: "Owner",
   company: "Sylhet BD, Banglafounder Academy & Surma Tech Zone",
-  message: "Romana is the technical powerhouse behind all our web platforms. Her ability to handle multiple complex projects with such high standards is rare. A top-tier engineer I highly recommend.",
+  message: "Ekfa is the technical powerhouse behind all our web platforms. Her ability to handle multiple complex projects with such high standards is rare. A top-tier engineer I highly recommend.",
   avatar_url: "/shots/mustafiz-rahman.png"
 },{
   name: "Md Mahbubur Rahman",
   role: "Owner",
   company: "Cyber Home",
-  message: "Romana has been a cornerstone of our team for over 4 years. Her technical depth in Laravel and proactive problem-solving have been vital to our USA operations. A truly dedicated professional.",
+  message: "Ekfa has been a cornerstone of our team for over 4 years. Her technical depth in Laravel and proactive problem-solving have been vital to our USA operations. A truly dedicated professional.",
   avatar_url: "/shots/mahbubur-rahman.png"
 },{
   name: "Dr. Tania Tofail",
   role: "Consultant (Endocrinology)",
   company: "Bangladesh Medical College Hospital & Ibn Sina",
-  message: "Romana developed the Endo2BMU Hospital Management Software for us, and the results have been exceptional. The system is streamlined, efficient, and has greatly improved our clinical workflows. Her technical expertise and professional approach are top-notch.",
+  message: "Ekfa developed the Endo2BMU Hospital Management Software for us, and the results have been exceptional. The system is streamlined, efficient, and has greatly improved our clinical workflows. Her technical expertise and professional approach are top-notch.",
   avatar_url: "/shots/dr-tania-tofail.png"
 },{
   name:"Abdullah Al Zubair",
