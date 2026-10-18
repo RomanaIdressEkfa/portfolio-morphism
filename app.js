@@ -190,31 +190,58 @@ function renderExperience(){
 }
 
 const REVIEW_METRICS={
-  "Tariqul Islam":"Saved Months of Engineering",
+  "MD Alifuzzaman Alif":"Streamlined Apparel Tracking",
+  "Mustafizur Rahman Khan":"Architect of Multiple Platforms",
+  "Md Mahbubur Rahman":"4 Years of Engineering Excellence",
   "Sumaiya Habib":"Shipped Ahead of Schedule",
   "Shihab Uddin":"Instant Conversion Jump",
-  "Rashed Khan":"3 Days Into a 5-Min Pipeline",
-  "Nusrat Jahan":"Rock-Solid Production Quality",
-  "Abdullah Al Zubair":"Most Reliable Engineer I've Managed"
+  "Abdullah Al Zubair":"Most Reliable Engineer I've Managed",
+  "Laeeq MD Zobayer Hossain":"Zero-Touch Social Media Automation"
 };
+const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin"];
 // real photo + corrected name/role for a client, immune to stale Supabase data (same pattern as the CV/Resume pin)
 const REVIEW_OVERRIDES={
+  "Sumaiya Habib":{avatar:"/shots/sumaiya-habib.jpg"},
   "Tariqul Islam":{name:"Hamza Bin Hakim",role:"CEO",avatar:"/shots/hamza-bin-hakim.jpg",
     message:"When my wife and I first saw the website Ekfa designed for Unique Business Systems Ltd, we were genuinely blown away — we ended up revisiting the site five or six times just to admire the design again. It's rare to find a developer with that level of visual taste paired with real engineering skill."}
 };
 // a testimonial not yet in Supabase, pinned locally so it survives a live-data refresh
 const EXTRA_TESTIMONIALS=[{
+  name: "MD Alifuzzaman Alif",
+  role: "Merchandiser",
+  company: "Al Muslim Group",
+  message: "Romana built a custom Apparel Tracking Software that transformed our order management. The system is intuitive, reliable, and significantly improved transparency with our international buyers.",
+  avatar_url: "/shots/alif.jpeg"
+},{
+  name: "Mustafizur Rahman Khan",
+  role: "Owner",
+  company: "Sylhet BD, Banglafounder Academy & Surma Tech Zone",
+  message: "Romana is the technical powerhouse behind all our web platforms. Her ability to handle multiple complex projects with such high standards is rare. A top-tier engineer I highly recommend.",
+  avatar_url: "/shots/mustafiz-rahman.png"
+},{
+  name: "Md Mahbubur Rahman",
+  role: "Owner",
+  company: "Cyber Home",
+  message: "Romana has been a cornerstone of our team for over 4 years. Her technical depth in Laravel and proactive problem-solving have been vital to our USA operations. A truly dedicated professional.",
+  avatar_url: "/shots/mahbubur-rahman.png"
+},{
   name:"Abdullah Al Zubair",
   role:"Operational Head",
   company:"Troubleshoot Limited",
-  message:"Ekfa is the kind of engineer every manager hopes to have on their team. She takes full ownership of every task, flags risks before they become problems, and consistently delivers clean, production-ready work ahead of schedule. Her technical depth in Laravel and ERP systems, paired with how clearly she communicates progress, makes her one of the most reliable people I've managed.",
+  message:"Ekfa is the kind of engineer every manager hopes for. She takes full ownership, flags risks early, and consistently delivers clean, production-ready work ahead of schedule. Her technical depth in Laravel and ERP systems, paired with clear communication, makes her one of my most reliable team members.",
   avatar_url:"/shots/abdullah-al-zubair.jpg"
+},{
+  name:"Laeeq MD Zobayer Hossain",
+  role:"Product Manager",
+  company:"Unique Business Systems Limited",
+  message:"I needed automation for my Facebook and YouTube, so I hired Ekfa. She set up the automation brilliantly. Now, I no longer have to struggle or stress over generating videos manually—everything happens automatically. Honestly, she is brilliant at what she does!",
+  avatar_url:"/shots/laeeq-zobayer-hossain.jpg"
 }];
 const REV_STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.4 7 .7-5.3 4.7 1.6 6.9-6.2-3.7-6.2 3.7 1.6-6.9-5.3-4.7 7-.7z"/></svg>';
 let revTimer=null;
 function renderReviews(){
   const caps=el("revCaps"), dots=el("revDots"), carousel=el("revCarousel");
-  const list=[...TESTIMONIALS, ...EXTRA_TESTIMONIALS];
+  const list=[...TESTIMONIALS, ...EXTRA_TESTIMONIALS].filter(t => !REVIEW_EXCLUSIONS.includes(t.name));
   if(!caps||!dots||!list.length) return;
   const stars=Array(5).fill(REV_STAR).join("");
   caps.innerHTML = list.map((t,i)=>{
