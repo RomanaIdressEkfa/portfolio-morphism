@@ -225,7 +225,7 @@ const EXTRA_TESTIMONIALS=[{
 },{
   name: "Dr. Tania Tofail",
   role: "Consultant (Endocrinology)",
-  company: "Endo2BMU",
+  company: "Bangladesh Medical College Hospital & Ibn Sina",
   message: "Romana developed the Endo2BMU Hospital Management Software for us, and the results have been exceptional. The system is streamlined, efficient, and has greatly improved our clinical workflows. Her technical expertise and professional approach are top-notch.",
   avatar_url: "/shots/dr-tania-tofail.png"
 },{
