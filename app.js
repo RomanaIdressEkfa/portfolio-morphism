@@ -197,7 +197,7 @@ const REVIEW_METRICS={
   "Abdullah Al Zubair":"Most Reliable Engineer I've Managed",
   "Laeeq MD Zobayer Hossain":"Zero-Touch Social Media Automation"
 };
-const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib"];
+const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib", "MD Alifuzzaman Alif"];
 // real photo + corrected name/role for a client, immune to stale Supabase data (same pattern as the CV/Resume pin)
 const REVIEW_OVERRIDES={
   "Tariqul Islam":{name:"Hamza Bin Hakim",role:"CEO",avatar:"/shots/hamza-bin-hakim.jpg",
