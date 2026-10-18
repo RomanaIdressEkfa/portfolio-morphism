@@ -9,7 +9,7 @@ const CV_URL = "https://drive.google.com/file/d/13U8SuxUADaQ-f-EXH9x0CpoUA5GGKiZ
 
 const el = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
-let PROFILE={}, PROJECTS=[], SKILLS=[], EXPERIENCES=[], TESTIMONIALS=[], showAll=false;
+let PROFILE={}, PROJECTS=[], SKILLS=[], EXPERIENCES=[], TESTIMONIALS=[];
 
 const ICON = {
   github:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.6.5.5 5.6.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.6 18.4.5 12 .5z"/></svg>',
@@ -68,57 +68,88 @@ function renderMarquee(){
   const one = items.map(t=>`<span>${esc(t)}</span>`).join("");
   el("marquee").innerHTML = one+one;
 }
-function renderShotMarquee(){
-  const track=el("shotTrack"); if(!track) return;
-  const shots=["/shots/refs/ref-79.png","/shots/refs/ref-80.png","/shots/refs/ref-81.png","/shots/refs/ref-82.png","/shots/refs/ref-84.png","/shots/refs/ref-85.png","/shots/refs/ref-86.png"];
-  const one = shots.map(src=>`<figure><img src="${src}" loading="lazy" alt=""/></figure>`).join("");
-  track.innerHTML = one+one;
-  initShotArc();
-}
-function initShotArc(){
-  const wrap=document.querySelector(".shot-marquee"); const track=el("shotTrack");
-  if(!wrap||!track) return;
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const figures=[...track.querySelectorAll("figure")];
-  const arcHeight=64, maxTilt=7;
-  function tick(){
-    const wrapRect=wrap.getBoundingClientRect();
-    const midX=wrapRect.left+wrapRect.width/2;
-    figures.forEach(fig=>{
-      const r=fig.getBoundingClientRect();
-      const centerX=r.left+r.width/2;
-      let t=(centerX-midX)/(wrapRect.width/2);
-      t=Math.max(-1.3,Math.min(1.3,t));
-      const rise=Math.max(0,1-t*t);
-      fig.style.transform=`translateY(${(-arcHeight*rise).toFixed(1)}px) rotate(${(t*maxTilt).toFixed(1)}deg)`;
-    });
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
 function sortedProjects(){
   return [...PROJECTS].sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)||(a.sort_order||0)-(b.sort_order||0));
 }
+/* work slider: a fanned, auto-advancing stack of project screenshots (glass frame, no text by
+   default). Click the active centre picture to reveal its details with no card background;
+   click a side picture (or the arrows) to bring it to centre. Auto-advance pauses on hover/open. */
 function renderWork(){
-  const list = sortedProjects();
-  const shown = showAll ? list : list.slice(0,6);
-  const card = (p,i)=>{
-    const img = p.image_url || `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(p.live_url||"")}`;
-    const techs = (p.tech||[]).slice(0,4).map(t=>`<span>${esc(t)}</span>`).join("");
-    return `<article class="wcard reveal" data-i="${i}">
-      <div class="thumb"><img class="ph" src="${esc(img)}" alt="${esc(p.title)}" loading="lazy" decoding="async" />
-        <span class="cat">${esc(p.category||"Project")}</span>
-        <span class="arrow">${ICON.arrow}</span></div>
-      <div class="wc-body"><h3>${esc(p.title)}</h3><p>${esc(p.description||"")}</p><div class="techs">${techs}</div>
-        <span class="wc-more">View project ${ICON.arrow}</span></div>
-    </article>`;
-  };
-  el("workGrid").innerHTML = shown.map(card).join("");
-  el("workGrid").querySelectorAll(".wcard").forEach(c=>c.addEventListener("click",()=>openModal(+c.dataset.i)));
-  el("moreBtn").style.display = list.length>6 ? "" : "none";
-  el("moreBtn").textContent = showAll ? "Show less" : `See all ${list.length} projects`;
-  revealObserve(el("workGrid").querySelectorAll(".reveal"));
+  const stack=el("workStack"); if(!stack) return;
+  const list=sortedProjects(); if(!list.length) return;
+  stack.innerHTML=list.map((p,i)=>{
+    const img=p.image_url || `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(p.live_url||"")}`;
+    return `<figure class="work-card" data-i="${i}"><img src="${esc(img)}" alt="${esc(p.title)}" decoding="async"/></figure>`;
+  }).join("");
+  initWorkSlider(list);
+}
+function initWorkSlider(list){
+  const stack=el("workStack"), detail=el("workDetail"), slider=el("workSlider");
+  const cards=[...stack.querySelectorAll(".work-card")];
+  const N=list.length, GS=hasGSAP();
+  let active=0, open=false, timer=null, tiltX=0, tiltY=0, raf=0;
+
+  function renderDetail(){
+    const p=list[active];
+    const techs=(p.tech||[]).slice(0,5).map(t=>`<span>${esc(t)}</span>`).join("");
+    const link=p.live_url?`<a class="btn btn-blue" href="${esc(p.live_url)}" target="_blank" rel="noopener">View project ${ICON.arrow}</a>`:"";
+    detail.innerHTML=`<h3>${esc(p.title)}</h3><p>${esc(p.description||"")}</p><div class="techs">${techs}</div>${link}`;
+    if(GS) gsap.fromTo(detail.children,{opacity:0,y:14},{opacity:1,y:0,duration:.45,stagger:.06,ease:"power3.out"});
+  }
+  function layout(first){
+    cards.forEach((c,i)=>{
+      let off=i-active; if(off>N/2) off-=N; if(off<-N/2) off+=N;
+      const a=Math.abs(off);
+      const x=off*195, scale=Math.max(1-a*0.15,0.46), rot=off*-12, y=a*10, z=100-a;
+      const vis=a<=3;
+      const isActive=off===0;
+      c.style.zIndex=z; c.style.pointerEvents=vis?"auto":"none";
+      c.classList.toggle("is-active",isActive);
+      const vars={xPercent:-50,x,y,scale,rotateY:rot,opacity:vis?(1-a*0.26):0,
+        rotateX:isActive?tiltX:0,ease:"elastic.out(1,0.65)",duration:first?0:0.85,overwrite:"auto"};
+      if(GS) gsap.to(c,vars); else c.style.transform=`translateX(-50%) translate(${x}px,${y}px) scale(${scale}) rotateY(${rot}deg)`,c.style.opacity=vars.opacity;
+    });
+  }
+  function goTo(i){ active=((i%N)+N)%N; layout(); if(open) renderDetail(); }
+  function next(){ goTo(active+1); }
+  function prev(){ goTo(active-1); }
+  function toggleDetail(show){
+    open=show; detail.classList.toggle("open",open);
+    if(open){ renderDetail(); stop(); } else start();
+  }
+  function start(){ stop(); timer=setInterval(next,4200); }
+  function stop(){ clearInterval(timer); timer=null; }
+
+  cards.forEach(c=>c.addEventListener("click",()=>{
+    const i=+c.dataset.i;
+    if(i===active) toggleDetail(!open); else { goTo(i); if(open) renderDetail(); }
+  }));
+  el("workPrev").addEventListener("click",()=>{ if(open) toggleDetail(false); prev(); });
+  el("workNext").addEventListener("click",()=>{ if(open) toggleDetail(false); next(); });
+  slider.addEventListener("mouseenter",stop);
+  slider.addEventListener("mouseleave",()=>{ if(!open) start(); });
+
+  /* mouse-reactive 3D tilt + glass sheen on the active card */
+  if(GS&&matchMedia("(hover: hover) and (pointer: fine)").matches&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    stack.addEventListener("pointermove",e=>{
+      const a=stack.querySelector(".work-card.is-active"); if(!a) return;
+      const r=a.getBoundingClientRect(), px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
+      tiltX=-py*14;
+      if(raf) return; raf=requestAnimationFrame(()=>{ raf=0;
+        gsap.to(a,{rotateX:tiltX,rotateY:px*14,duration:.5,ease:"power3.out",overwrite:"auto"});
+        a.style.setProperty("--mx",((px+.5)*100)+"%"); a.style.setProperty("--my",((py+.5)*100)+"%");
+      });
+    });
+    stack.addEventListener("pointerleave",()=>{ tiltX=0; const a=stack.querySelector(".work-card.is-active");
+      if(a) gsap.to(a,{rotateX:0,rotateY:0,duration:.6,ease:"elastic.out(1,0.6)"}); });
+  }
+
+  layout(true); start();
+  if(GS) ScrollTrigger.create({trigger:slider,start:"top 80%",once:true,
+    onEnter:()=>{
+      const to=cards.map(c=>({opacity:gsap.getProperty(c,"opacity"),y:gsap.getProperty(c,"y"),scale:gsap.getProperty(c,"scale")}));
+      gsap.fromTo(cards,{opacity:0,y:60,scale:.7},{opacity:(i)=>to[i].opacity,y:(i)=>to[i].y,scale:(i)=>to[i].scale,duration:.9,stagger:.06,ease:"back.out(1.5)"});
+    }});
 }
 
 function renderExperience(){
@@ -160,22 +191,6 @@ function renderReviews(){
   const one = TESTIMONIALS.map(card).join("");
   el("revTrack").innerHTML = one + one; // duplicate for seamless auto-slide
 }
-
-/* modal */
-function openModal(i){
-  const p = sortedProjects()[i]; if(!p) return;
-  el("mImg").src = p.image_url || (p.gallery&&p.gallery[0]) || "";
-  el("mCat").textContent = p.category||"Project";
-  el("mTitle").textContent = p.title;
-  el("mDesc").textContent = p.long_description || p.description || "";
-  el("mTechs").innerHTML = (p.tech||[]).map(t=>`<span>${esc(t)}</span>`).join("");
-  let acts="";
-  if(p.live_url) acts+=`<a class="btn btn-blue" href="${esc(p.live_url)}" target="_blank" rel="noopener">Visit live ${ICON.arrow}</a>`;
-  if(p.github_url) acts+=`<a class="btn btn-out" href="${esc(p.github_url)}" target="_blank" rel="noopener">Code ${ICON.github}</a>`;
-  el("mActions").innerHTML=acts;
-  el("modal").classList.add("open"); document.body.style.overflow="hidden";
-}
-function closeModal(){ el("modal").classList.remove("open"); document.body.style.overflow=""; }
 
 /* reveal + counters (GSAP if present) */
 const hasGSAP = ()=>!!(window.gsap && window.ScrollTrigger);
@@ -281,80 +296,26 @@ function initButtonFX(){
 // ThreeUI GlassAiButton host (vanilla port of GlassAiButton.tsx): the authored HTML runs
 // byte-for-byte in an opaque allow-scripts-only srcdoc iframe, mounted only while the
 // host and tab are visible so WebGL resources are released otherwise.
-function initGlassAiButton(){
-  const host=el("gabHost"); if(!host) return;
-  let src=null, frame=null, hostVisible=false;
-  const load=()=>src?Promise.resolve(src):fetch("/effects/glass-ai-button/glass-ai-button.html?v=20",{cache:"no-cache"}).then(r=>r.text()).then(t=>(src=t));
-  const visible=()=>hostVisible&&!document.hidden;
-  function sync(){
-    if(visible()&&!frame&&!crashed){
-      host.dataset.state="loading";
-      load().then(t=>{
-        if(frame||!visible()) return;
-        const f=document.createElement("iframe");
-        f.title="Glass AI Button"; f.setAttribute("sandbox","allow-scripts"); f.loading="eager"; f.className="gab-frame";
-        // stay on the poster until the scene has drawn its first frames (iframe load fires before that,
-        // and a blank transparent frame shows the page through the pill as a white flash)
-        f.addEventListener("load",()=>{ setTimeout(()=>showLive(f),8000); });
-        f.srcdoc=t; frame=f; host.appendChild(f);
-      }).catch(()=>{ host.dataset.state="paused"; });
-    }
-  }
-  // pointer input on the pill-shaped hit area is forwarded into the frame (the frame ignores the mouse
-  // so its large transparent area never blocks the page; re-clipping it caused white flashes)
-  const hit=el("gabHit");
-  const fwd=(type,e)=>{ if(!frame||!frame.classList.contains("ready")) return; const r=frame.getBoundingClientRect();
-    frame.contentWindow.postMessage({gab:1,type,x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height},"*"); };
-  if(hit){ for(const t of ["pointermove","pointerdown","pointerup"]) hit.addEventListener(t,e=>fwd(t,e));
-    hit.addEventListener("pointerleave",e=>fwd("leave",e)); }
-  let burstTimer=null, lastAlive=0, crashed=false;
-  // watchdog: if the frame stops reporting (e.g. its process crashed and Chrome shows a blank frame),
-  // drop it and keep the still image of the button instead
-  setInterval(()=>{ if(frame&&frame.classList.contains("ready")&&!document.hidden&&Date.now()-lastAlive>12000){
-    frame.remove(); frame=null; crashed=true; host.dataset.state="paused"; host.classList.remove("burst"); } },2500);
-  function showLive(f){ if(frame===f&&!f.classList.contains("ready")){ lastAlive=Date.now(); host.dataset.state="ready"; f.classList.add("ready"); } }
-  addEventListener("message",e=>{
-    if(!frame||e.source!==frame.contentWindow) return;
-    if(e.data==="gab-alive"){ lastAlive=Date.now(); return; }
-    if(e.data==="gab-frame"){ lastAlive=Date.now(); showLive(frame); return; }
-    if(e.data!=="gab-burst") return;
-    host.classList.add("burst"); clearTimeout(burstTimer);
-    burstTimer=setTimeout(()=>host.classList.remove("burst"),2600);
-  });
-  document.addEventListener("visibilitychange",sync);
-  const start=()=>{
-    if(!("IntersectionObserver" in window)){ hostVisible=true; sync(); return; }
-    new IntersectionObserver(([en])=>{ hostVisible=en?en.isIntersecting:true; sync(); },{rootMargin:"80px"}).observe(host);
-  };
-  // a still poster (captured from the real render) shows until the visitor first interacts; then the live
-  // WebGL scene mounts. Keeps the 740 KB renderer off the critical path for first paint and page-speed tests.
-  const evs=["pointermove","pointerdown","touchstart","keydown","wheel","scroll"];
-  const go=()=>{ evs.forEach(ev=>removeEventListener(ev,go,true)); start(); };
-  evs.forEach(ev=>addEventListener(ev,go,{capture:true,passive:true}));
-}
 function initChrome(){
   const nav=el("nav"), navInner=el("navInner");
   addEventListener("scroll",()=>nav.classList.toggle("scrolled",scrollY>30),{passive:true});
   el("burger").addEventListener("click",()=>navInner.classList.toggle("open"));
   document.querySelectorAll(".nav-links a").forEach(a=>a.addEventListener("click",()=>navInner.classList.remove("open")));
-  el("moreBtn").addEventListener("click",()=>{showAll=!showAll;renderWork();});
-  el("modal").querySelectorAll("[data-close]").forEach(x=>x.addEventListener("click",closeModal));
-  addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 }
 function initGsap(){
   // no GSAP → just reveal hero content with CSS
   if(!hasGSAP()){ document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("in")); return; }
   gsap.registerPlugin(ScrollTrigger);
   document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("g-done","in"));
-  // hero intro — fromTo guarantees a visible end state
-  gsap.timeline({defaults:{ease:"power3.out"}})
-    .fromTo("#gabHost",{y:10},{y:0,duration:.6},.1)
+  // hero intro — fromTo guarantees a visible end state; paused until the preloader hands off
+  window.__heroIntro = gsap.timeline({paused:true,defaults:{ease:"power3.out"}})
+    .fromTo("#heroId",{y:10},{y:0,duration:.6},.1)
     .fromTo(".hero h1",{y:14},{y:0,duration:.8},"-=.3")
     .fromTo(".hero .lead",{y:10},{y:0,duration:.5},"-=.5")
     .fromTo(".hero-socials .spill",{y:22,autoAlpha:0},{y:0,autoAlpha:1,stagger:.08,duration:.5},"-=.35")
     .fromTo(".scrollrow",{autoAlpha:0},{autoAlpha:1,duration:.6},"-=.2");
   // safety: if anything interrupts the timeline, force content visible shortly after
-  setTimeout(()=>document.querySelectorAll("#gabHost,.hero h1,.hero .lead").forEach(n=>{n.style.opacity="1";n.style.visibility="visible";}),2600);
+  setTimeout(()=>document.querySelectorAll("#heroId,.hero h1,.hero .lead").forEach(n=>{n.style.opacity="1";n.style.visibility="visible";}),2600);
 }
 
 /* boot */
@@ -362,7 +323,7 @@ function hydrate(){
   PROFILE=(window.PROFILE&&window.PROFILE[0])||window.PROFILE||{};
   PROJECTS=window.PROJECTS||[]; SKILLS=window.SKILLS||[];
   EXPERIENCES=window.EXPERIENCES||[]; TESTIMONIALS=window.TESTIMONIALS||[];
-  renderProfile(); renderMarquee(); renderShotMarquee(); renderWork(); renderExperience(); renderReviews();
+  renderProfile(); renderMarquee(); renderWork(); renderExperience(); renderReviews();
   revealObserve(document.querySelectorAll(".reveal"));
   initCounters();
 }
@@ -459,7 +420,179 @@ function initSvcTabs(){
   container.addEventListener("focusout",startAuto);
   startAuto();
 }
-function boot(){ initGsap(); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initGlassAiButton(); initSvcTabs(); refreshLive();
+/* preloader: dot drops into a water-drop splash, bar lands and flings EKFA out, glass letters morph into PORTFOLIO.
+   Interactive: cursor light + word tilt + glass sheen follow the pointer; clicking drops a ripple. */
+function initPreloader(onDone){
+  const pl=el("preloader");
+  let done=false, onKey=null;
+  const finish=()=>{ if(done) return; done=true; if(onKey) document.removeEventListener("keydown",onKey);
+    document.documentElement.classList.remove("is-loading"); if(pl) pl.remove(); onDone&&onDone(); };
+  if(!pl) return finish();
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches||!hasGSAP()) return finish();
+  document.documentElement.classList.add("is-loading");
+  pl.style.animation="none";
+  const word=pl.querySelector(".pl-word"), slots=[...word.querySelectorAll(".pl-l")];
+  const letters=slots.slice(0,4), bslot=slots[4];
+  const bar=pl.querySelector(".pl-bar"), dot=pl.querySelector(".pl-dot");
+  const center=(e,f=.5)=>{ const r=e.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height*f}; };
+  const spawn=cls=>{ const d=document.createElement("span"); d.className=cls; pl.appendChild(d); return d; };
+  function splash(x,y,s){
+    const f=spawn("pl-flash"); gsap.set(f,{x,y,scale:.2*s});
+    gsap.timeline({onComplete:()=>f.remove()}).to(f,{opacity:1,scale:.9*s,duration:.18,ease:"power2.out"}).to(f,{opacity:0,scale:1.5*s,duration:.6,ease:"power2.out"});
+    for(let i=0;i<3;i++){ const r=spawn("pl-ripple"); gsap.set(r,{x,y,scale:0});
+      gsap.to(r,{keyframes:[{opacity:.95,scale:.25*s,duration:.05},{opacity:0,scale:(1.1+i*.5)*s,duration:.95,ease:"power2.out"}],delay:i*.13,onComplete:()=>r.remove()}); }
+    for(let i=0,n=Math.max(3,Math.round(8*s));i<n;i++){ const d=spawn("pl-drop");
+      const dx=(Math.random()*2-1)*130*s, hgt=(40+Math.random()*90)*s;
+      gsap.set(d,{x,y,scale:.5+Math.random()*.8});
+      gsap.timeline({onComplete:()=>d.remove()}).to(d,{x:x+dx*.6,y:y-hgt,duration:.28,ease:"power2.out"}).to(d,{x:x+dx,y:y+12,opacity:0,duration:.34,ease:"power2.in"}); }
+  }
+  let raf=0,px=.5,py=.45;
+  pl.addEventListener("pointermove",e=>{ px=e.clientX/innerWidth; py=e.clientY/innerHeight; if(raf) return;
+    raf=requestAnimationFrame(()=>{ raf=0;
+      pl.style.setProperty("--mx",(px*100)+"%"); pl.style.setProperty("--my",(py*100)+"%"); pl.style.setProperty("--sheen",(130-px*160)+"%");
+      gsap.to(word,{rotationY:(px-.5)*16,rotationX:-(py-.5)*10,duration:.6,ease:"power3.out",overwrite:"auto"}); }); });
+  pl.addEventListener("pointerdown",e=>{ if(!e.target.closest(".pl-skip")) splash(e.clientX,e.clientY,.7); });
+
+  const target="PORTFOLIO";
+  const morph=k=>{ const s=slots[k], ch=target[k];
+    return gsap.timeline().to(s,{rotationX:90,duration:.07,ease:"power1.in"})
+      .add(()=>{ if(k===4){ s.innerHTML=""; s.classList.remove("pl-bslot"); } s.textContent=ch; s.dataset.ch=ch; s.classList.remove("is-empty"); gsap.set(s,{opacity:1}); })
+      .fromTo(s,{rotationX:-90},{rotationX:0,duration:.14,ease:"back.out(2)",immediateRender:false}); };
+
+  const BIG=innerWidth<600?1.35:1.55;                                    // EKFA is 4 letters: show it bigger, shrink into PORTFOLIO
+  gsap.set(word,{scale:BIG,transformOrigin:"50% 50%"});
+  const o=center(bslot,.35), off=letters.map(l=>{ const c=center(l); return {x:(o.x-c.x)/BIG,y:(o.y-c.y)/BIG}; });
+  const drop=-innerHeight*.55;
+  const tl=gsap.timeline({onComplete:finish});
+  tl.set(dot,{opacity:1,y:drop,scaleX:.8,scaleY:1.3})
+    .to(dot,{y:0,duration:.45,ease:"power2.in"})
+    .add(()=>{ const c=center(dot,.85); splash(c.x,c.y,1); })
+    .to(dot,{scaleX:1.5,scaleY:.55,duration:.08,ease:"power2.out"})
+    .to(dot,{scaleX:1,scaleY:1,duration:.5,ease:"elastic.out(1,.35)"})
+    .fromTo(bar,{opacity:1,y:drop},{y:0,duration:.32,ease:"power2.in",immediateRender:false},.55)
+    .add(()=>{ const c=center(bar,1); splash(c.x,c.y,.45); },.87)
+    .to(bar,{scaleY:.82,duration:.06},.87)
+    .to(bar,{scaleY:1,duration:.3,ease:"elastic.out(1,.4)"},.93)
+    .to(bar,{rotation:-72,duration:.32,ease:"power2.inOut"},1.0)
+    .fromTo(letters,{opacity:1,x:i=>off[i].x,y:i=>off[i].y,rotation:i=>-260-i*40,scale:.15},
+      {x:0,y:0,rotation:0,scale:1,duration:.6,ease:"back.out(1.3)",stagger:{each:.1,from:"end"},immediateRender:false},1.12)
+    .to(bar,{rotation:0,duration:.7,ease:"elastic.out(1.05,.35)"},1.55)
+    .fromTo(pl,{"--sheen":"130%"},{"--sheen":"-30%",duration:.6,ease:"power2.inOut",immediateRender:false},2.05);
+  tl.to(word,{scale:1,duration:.45,ease:"power3.inOut"},2.1);
+  for(let k=0;k<target.length;k++) tl.add(morph(k),2.25+k*.075);
+  tl.fromTo(pl,{"--sheen":"130%"},{"--sheen":"-30%",duration:.5,ease:"power2.inOut",immediateRender:false},3.0)
+    .to(word,{scale:.92,duration:.5,ease:"power2.in"},3.55)
+    .fromTo(pl,{clipPath:"circle(75% at 50% 50%)"},{clipPath:"circle(0% at 50% 50%)",duration:.6,ease:"power3.in",immediateRender:false},3.5);
+  pl.querySelector(".pl-skip").addEventListener("click",()=>tl.progress(1));
+  onKey=e=>{ if(e.key==="Escape"||e.key==="Enter") tl.progress(1); };
+  document.addEventListener("keydown",onKey);
+}
+/* story particle portrait, inside a neumorphic disc.
+   - scroll: dots swirl in from an orbit ring and assemble the face; swirl back out as the section leaves
+   - pointer: dots near the cursor are pushed away and spring back; disc and chips tilt toward the cursor */
+function initParticlePortrait(){
+  const cv=el("storyParticles"); if(!cv) return;
+  const disc=cv.parentElement, wrap=disc.parentElement, ctx=cv.getContext("2d"), section=cv.closest("section")||wrap;
+  const chips=[...wrap.querySelectorAll(".sp-chip")];
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const BUCKETS=Array.from({length:8},(_,i)=>{ const t=i/7; return `rgba(${Math.round(110-90*t)},${Math.round(150-118*t)},${Math.round(220-150*t)},${(.18+.78*t).toFixed(2)})`; });
+  let pts=[], W=0, img=null, scrollP=0, inView=true, running=false; const t0=performance.now();
+  const mouse={x:-9999,y:-9999};
+  function build(){
+    const dpr=Math.min(devicePixelRatio||1,2); W=disc.getBoundingClientRect().width;
+    cv.width=Math.round(W*dpr); cv.height=Math.round(W*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+    const gap=W<400?4.5:5.5, inner=W*.86;                                  // portrait lives inside the inner ring
+    const dw=inner*.98, ox=(W-dw)/2, oy=W*.12;                             // face centred, shoulders run to the rim
+    const dh=dw*img.height/img.width, sw=Math.round(dw/gap), sh=Math.round(dh/gap);
+    const s=document.createElement("canvas"); s.width=sw; s.height=sh;
+    const sc=s.getContext("2d",{willReadFrequently:true}); sc.drawImage(img,0,0,sw,sh);
+    const d=sc.getImageData(0,0,sw,sh).data, old=pts, c=W/2, rr=(inner/2)**2; pts=[];
+    for(let y=0;y<sh;y++) for(let x=0;x<sw;x++){
+      const hx=ox+x*gap, hy=oy+y*gap; if((hx-c)**2+(hy-c)**2>rr) continue;  // clip to the circle
+      const i=(y*sw+x)*4, lum=(d[i]*.299+d[i+1]*.587+d[i+2]*.114)/255;
+      if(d[i+3]<40||lum>.88) continue;                                     // drop the white studio background
+      const dk=Math.min(1,Math.max(0,(1-lum-.12)/.62));
+      const ang=Math.random()*Math.PI*2, rad=W*(.4+Math.random()*.12);      // scattered home: an orbit ring around the rim
+      const p={hx,hy,ang,rad,spd:.15+Math.random()*.25,b:Math.min(7,Math.floor(dk*8)),r:gap*(.18+.32*dk),vx:0,vy:0,x:0,y:0};
+      const prev=old[pts.length]; p.x=prev?prev.x:c+Math.cos(ang)*rad; p.y=prev?prev.y:c+Math.sin(ang)*rad;
+      pts.push(p);
+    }
+  }
+  function frame(now){
+    if(!inView){ running=false; return; }
+    const sp=scrollP, disp=reduce?0:1-sp;
+    const e=disp*disp*(3-2*disp), t=(now-t0)/1000, c=W/2, R=W<400?55:85, R2=R*R;
+    ctx.clearRect(0,0,W,W);
+    const paths=BUCKETS.map(()=>new Path2D());
+    for(const p of pts){
+      const a=p.ang+t*p.spd, ox=c+Math.cos(a)*p.rad, oy=c+Math.sin(a)*p.rad;
+      const tx=p.hx+(ox-p.hx)*e, ty=p.hy+(oy-p.hy)*e;
+      p.vx+=(tx-p.x)*.07; p.vy+=(ty-p.y)*.07;
+      const dx=p.x-mouse.x, dy=p.y-mouse.y, dd=dx*dx+dy*dy;
+      if(dd<R2&&e<.5){ const f=(1-dd/R2)*5/Math.sqrt(dd||1); p.vx+=dx*f; p.vy+=dy*f; }
+      p.vx*=.8; p.vy*=.8; p.x+=p.vx; p.y+=p.vy;
+      paths[p.b].moveTo(p.x+p.r,p.y); paths[p.b].arc(p.x,p.y,p.r,0,6.2832);
+    }
+    paths.forEach((pa,i)=>{ ctx.fillStyle=BUCKETS[i]; ctx.fill(pa); });
+    requestAnimationFrame(frame);
+  }
+  const kick=()=>{ if(!running&&inView&&pts.length){ running=true; requestAnimationFrame(frame); } };
+  img=new Image(); img.src="/shots/portrait-particles.png";
+  img.decode().then(()=>{
+    build(); kick();
+    let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ build(); kick(); },150); });
+    new IntersectionObserver(es=>{ inView=es[0].isIntersecting; kick(); },{rootMargin:"200px"}).observe(section);
+    if(hasGSAP()) ScrollTrigger.create({trigger:section,start:"top 95%",end:"top 45%",onUpdate:s=>{ scrollP=s.progress; }});
+    if(reduce) return;
+    addEventListener("pointermove",e=>{
+      const r=cv.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top;
+      const w=wrap.getBoundingClientRect(), nx=(e.clientX-w.left)/w.width-.5, ny=(e.clientY-w.top)/w.height-.5;
+      if(Math.abs(nx)<1&&Math.abs(ny)<1){
+        disc.style.transform=`rotateY(${nx*12}deg) rotateX(${-ny*12}deg)`;
+        chips.forEach((ch,i)=>{ const k=(i+1)*10; ch.style.translate=`${nx*k}px ${ny*k}px`; });
+      }
+    },{passive:true});
+    section.addEventListener("pointerleave",()=>{ mouse.x=mouse.y=-9999; disc.style.transform=""; chips.forEach(ch=>ch.style.translate=""); });
+  }).catch(()=>{});
+}
+function initAbirCursor(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  const cv=document.createElement("canvas");
+  cv.id="abirCv"; cv.setAttribute("aria-hidden","true");
+  cv.style.cssText="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9500";
+  document.body.appendChild(cv);
+  const ctx=cv.getContext("2d"), dpr=Math.min(devicePixelRatio||1,2);
+  const COLORS=["233,30,99","255,87,34","255,193,7","76,175,80","33,150,243","156,39,176","255,64,129","0,188,212"];
+  let W=0,H=0,parts=[],last={x:-9999,y:-9999,t:0};
+  function size(){ W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  size(); addEventListener("resize",size);
+  function spawn(x,y){
+    const n=2+Math.floor(Math.random()*2);
+    for(let i=0;i<n;i++){
+      const col=COLORS[Math.floor(Math.random()*COLORS.length)], ang=Math.random()*Math.PI*2, spd=.4+Math.random()*1.7;
+      parts.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-.35,r:6+Math.random()*9,life:1,col});
+    }
+  }
+  addEventListener("pointermove",e=>{
+    const now=performance.now(), dist=Math.hypot(e.clientX-last.x,e.clientY-last.y);
+    if(dist>5||now-last.t>35){ spawn(e.clientX,e.clientY); last={x:e.clientX,y:e.clientY,t:now}; }
+  });
+  (function frame(){
+    ctx.clearRect(0,0,W,H);
+    if(parts.length>260) parts=parts.slice(-260);
+    parts=parts.filter(p=>p.life>.02);
+    for(const p of parts){
+      p.x+=p.vx; p.y+=p.vy; p.vx*=.96; p.vy=p.vy*.96-.015; p.r+=.4; p.life*=.953;
+      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+      g.addColorStop(0,`rgba(${p.col},${(p.life*.5).toFixed(3)})`);
+      g.addColorStop(1,`rgba(${p.col},0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  })();
+}
+function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); refreshLive();
   if(hasGSAP()) setTimeout(()=>ScrollTrigger.refresh(),400);
 }
 async function refreshLive(){
