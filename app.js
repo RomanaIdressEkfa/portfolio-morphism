@@ -193,15 +193,13 @@ const REVIEW_METRICS={
   "MD Alifuzzaman Alif":"Streamlined Apparel Tracking",
   "Mustafizur Rahman Khan":"Architect of Multiple Platforms",
   "Md Mahbubur Rahman":"4 Years of Engineering Excellence",
-  "Sumaiya Habib":"Shipped Ahead of Schedule",
-  "Shihab Uddin":"Instant Conversion Jump",
+  "Dr. Tania Tofail":"Hospital Management Innovation",
   "Abdullah Al Zubair":"Most Reliable Engineer I've Managed",
   "Laeeq MD Zobayer Hossain":"Zero-Touch Social Media Automation"
 };
-const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin"];
+const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib"];
 // real photo + corrected name/role for a client, immune to stale Supabase data (same pattern as the CV/Resume pin)
 const REVIEW_OVERRIDES={
-  "Sumaiya Habib":{avatar:"/shots/sumaiya-habib.jpg"},
   "Tariqul Islam":{name:"Hamza Bin Hakim",role:"CEO",avatar:"/shots/hamza-bin-hakim.jpg",
     message:"When my wife and I first saw the website Ekfa designed for Unique Business Systems Ltd, we were genuinely blown away — we ended up revisiting the site five or six times just to admire the design again. It's rare to find a developer with that level of visual taste paired with real engineering skill."}
 };
@@ -224,6 +222,12 @@ const EXTRA_TESTIMONIALS=[{
   company: "Cyber Home",
   message: "Romana has been a cornerstone of our team for over 4 years. Her technical depth in Laravel and proactive problem-solving have been vital to our USA operations. A truly dedicated professional.",
   avatar_url: "/shots/mahbubur-rahman.png"
+},{
+  name: "Dr. Tania Tofail",
+  role: "Consultant (Endocrinology)",
+  company: "Endo2BMU",
+  message: "Romana developed the Endo2BMU Hospital Management Software for us, and the results have been exceptional. The system is streamlined, efficient, and has greatly improved our clinical workflows. Her technical expertise and professional approach are top-notch.",
+  avatar_url: "/shots/dr-tania-tofail.png"
 },{
   name:"Abdullah Al Zubair",
   role:"Operational Head",
