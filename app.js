@@ -87,7 +87,13 @@ const EXTRA_PROJECTS=[
    tech:["Next.js","React","Tailwind CSS"],image_url:"/shots/debtrunway.jpg",live_url:"https://debtrunway.com/"},
   {title:"BanglaFounder",category:"Community Platform",featured:true,sort_order:1.5,
    description:"Bangla platform showcasing Bangladeshi entrepreneurs — verified founder profiles, their stories and local products, with founder meetups and a blog.",
-   tech:["Laravel","PHP","MySQL","Tailwind"],image_url:"/shots/banglafounder.jpg",live_url:"https://banglafounder.com/"}
+   tech:["Laravel","PHP","MySQL","Tailwind"],image_url:"/shots/banglafounder.jpg",live_url:"https://banglafounder.com/"},
+  {title:"Apparel Soft Track",category:"Merchandising ERP",featured:true,sort_order:1.6,
+   description:"Merchandising tracker for apparel teams — every style moves New → In Progress → Waiting → Done, with buyers, seasons, samples, overdue alerts, reports, user access and CSV export.",
+   tech:["Laravel","PHP","MySQL","Tailwind"],image_url:"/shots/apparel-soft-track.jpg",live_url:"https://apparel.endo2bmu.com/"},
+  {title:"Bulb Buster",category:"Browser Game",featured:true,sort_order:1.7,
+   description:"Late-night physics mini-game — pull the slingshot to hit a swinging lamp, drag the shade, tug the chain. Live score, 1-minute challenge mode, sound and the visitor's local time.",
+   tech:["JavaScript","Canvas","CSS3"],image_url:"/shots/bulb-buster.jpg",live_url:"https://bulb-buster.vercel.app/"}
 ];
 function sortedProjects(){
   const titles=new Set(PROJECTS.map(p=>p.title));
@@ -863,7 +869,7 @@ function initParticlePortrait(){
   const touch=matchMedia("(hover: none), (pointer: coarse)").matches; let touching=false;
   function build(){
     const dpr=Math.min(devicePixelRatio||1,2); W=disc.getBoundingClientRect().width;
-    OFF=W*.2; const CW=W+2*OFF;                                            // canvas overhangs the disc on every side
+    OFF=W*.06; const CW=W+2*OFF;                                            // canvas overhangs the disc on every side
     cv.width=Math.round(CW*dpr); cv.height=Math.round(CW*dpr); ctx.setTransform(dpr,0,0,dpr,OFF*dpr,OFF*dpr);
     const gap=W<400?4.5:5.5, inner=W*.86;                                  // portrait lives inside the inner ring
     const dw=inner*.98, ox=(W-dw)/2, oy=W*.12;                             // face centred, shoulders run to the rim
@@ -876,7 +882,7 @@ function initParticlePortrait(){
       const i=(y*sw+x)*4, lum=(d[i]*.299+d[i+1]*.587+d[i+2]*.114)/255;
       if(d[i+3]<40||lum>.88) continue;                                     // drop the white studio background
       const dk=Math.min(1,Math.max(0,(1-lum-.12)/.62));
-      const ang=Math.random()*Math.PI*2, rad=W*(.16+Math.sqrt(Math.random())*.52); // scattered home: a cloud around the disc
+      const ang=Math.random()*Math.PI*2, rad=W*(.08+Math.sqrt(Math.random())*.42); // scattered home: a cloud inside the disc
       const p={hx,hy,ang,rad,spd:.15+Math.random()*.25,b:Math.min(7,Math.floor(dk*8)),r:gap*(.18+.32*dk),vx:0,vy:0,x:0,y:0};
       const prev=old[pts.length]; p.x=prev?prev.x:c+Math.cos(ang)*rad; p.y=prev?prev.y:c+Math.sin(ang)*rad;
       pts.push(p);

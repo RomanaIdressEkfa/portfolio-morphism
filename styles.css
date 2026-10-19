@@ -1458,7 +1458,7 @@ html.is-loading,html.is-loading body{overflow:hidden}
 .sp-disc{position:relative;width:min(100%,580px);aspect-ratio:1;border-radius:50%;background:var(--neo);
   box-shadow:18px 18px 40px var(--neo-dark),-18px -18px 40px var(--neo-light),inset 0 0 0 14px var(--neo),inset 6px 6px 18px var(--neo-dark),inset -6px -6px 18px var(--neo-light);
   transition:transform .6s cubic-bezier(.2,.8,.2,1)}
-.particle-portrait{position:absolute;inset:-20%;width:140%;height:140%;pointer-events:none;z-index:1}
+.particle-portrait{position:absolute;inset:-6%;width:112%;height:112%;pointer-events:none;z-index:1}
 .sp-chip{position:absolute;z-index:2;display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:999px;
   background:var(--neo);box-shadow:6px 6px 13px var(--neo-dark),-6px -6px 13px var(--neo-light);
   font:600 .92rem var(--display);color:var(--ink);white-space:nowrap;animation:spFloat 6s ease-in-out infinite;transition:translate .5s cubic-bezier(.2,.8,.2,1)}
