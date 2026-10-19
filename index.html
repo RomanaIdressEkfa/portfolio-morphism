@@ -25,13 +25,14 @@
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </noscript>
-  <link rel="stylesheet" href="/styles.css?v=139" />
+  <link rel="stylesheet" href="/styles.css?v=172" />
 </head>
 <body>
   <!-- PRELOADER -->
   <div class="preloader" id="preloader" aria-hidden="true">
     <div class="pl-light"></div>
     <div class="pl-stage">
+      <div class="pl-rays" aria-hidden="true"></div><div class="pl-bloom" aria-hidden="true"></div>
       <div class="pl-word"><span class="pl-l" data-ch="E">E</span><span class="pl-l" data-ch="K">K</span><span class="pl-l" data-ch="F">F</span><span class="pl-l" data-ch="A">A</span><span class="pl-l pl-bslot" data-ch=""><span class="pl-bang"><span class="pl-bar"></span><span class="pl-dot"></span></span></span><span class="pl-l is-empty" data-ch=""></span><span class="pl-l is-empty" data-ch=""></span><span class="pl-l is-empty" data-ch=""></span><span class="pl-l is-empty" data-ch=""></span></div>
     </div>
     <button class="pl-skip" type="button" tabindex="-1">Skip intro</button>
@@ -68,7 +69,7 @@
     <div class="nav-inner" id="navInner">
       <a href="#top" class="brand"><img src="/logo-sm.png" width="203" height="60" alt="EKFA — Romana Idress Ekfa" /></a>
       <div class="nav-links">
-        <a href="#work">Work</a><a href="#services">Services</a>
+        <a href="#toolkit">Work</a><a href="#services">Services</a>
         <a href="#experience">Experience</a><a href="#reviews">Reviews</a><a href="#faq">FAQ</a>
         <a class="only-mobile" data-cv target="_blank" rel="noopener">Download CV</a>
         <a class="only-mobile" data-resume target="_blank" rel="noopener">Resume</a>
@@ -207,6 +208,7 @@
   </section>
 
   <!-- WORK -->
+<!-- RECENT WORKS — hidden for now (restore by removing this comment wrapper)
   <section class="sec" id="work">
     <div class="wrap">
       <div class="sec-head center reveal">
@@ -224,32 +226,33 @@
       </div>
     </div>
   </section>
+  -->
 
-  <!-- TOOLKIT WHEEL -->
-  <section class="sec toolwheel" id="toolkit">
+  <!-- PORTFOLIO WHEEL -->
+  <section class="sec pf" id="toolkit">
     <div class="wrap">
-      <div class="tw-head reveal">
-        <div class="tw-meta">
-          <span><svg class="tw-x" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg>Romana Idress Ekfa</span>
-          <span>Full-Stack Laravel Developer<svg class="tw-x" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg></span>
-        </div>
-        <h2 class="tw-title"><span class="tw-accent" aria-hidden="true"></span><span class="o">Welcome to</span><span class="f">My Portfolio</span></h2>
-        <div class="tw-meta">
-          <span>Dhaka, BD</span>
-          <span>Toolkit / <b id="twCount">18</b></span>
-        </div>
+      <div class="sec-head center reveal">
+        <span class="eyebrow">Portfolio</span>
+        <h2>Welcome to my portfolio</h2>
+        <p>Every project on one wheel — it turns on its own. Drag, scroll or tap a card to explore.</p>
       </div>
-      <div class="tw-stage reveal" id="twStage" tabindex="0" aria-label="Tech stack wheel — drag, scroll or use the arrow keys">
-        <div class="tw-dial" id="twDial"></div>
-        <span class="tw-pointer" aria-hidden="true"></span>
-        <div class="tw-readout" id="twReadout" aria-live="polite"></div>
-        <div class="tw-cards" id="twCards"></div>
+    </div>
+    <div class="pf-stage" id="pfStage" tabindex="0" aria-label="Project wheel — drag, scroll or use the arrow keys">
+      <div class="pf-dial" id="pfDial" aria-hidden="true">
       </div>
+      <div class="pf-notch" aria-hidden="true"><i></i></div>
+      <div class="pf-cards" id="pfCards"></div>
+      <div class="pf-read" aria-live="polite"><b id="pfIndex">01</b> / <span id="pfTotal">00</span><em id="pfName"></em></div>
+    </div>
+    <div class="work-nav pf-nav">
+      <button class="work-arrow" id="pfPrev" type="button" aria-label="Previous project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="work-arrow" id="pfNext" type="button" aria-label="Next project"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
   </section>
 
   <!-- EXPERIENCE -->
   <section class="sec" id="experience">
+    <span class="xp-glow l" aria-hidden="true"></span><span class="xp-glow r" aria-hidden="true"></span>
     <div class="wrap">
       <div class="sec-head center reveal">
         <span class="eyebrow">Experiences</span>
@@ -282,15 +285,30 @@
       <div class="sec-head center reveal">
         <span class="eyebrow">Answers</span>
         <h2>Frequently asked</h2>
-        <p>Common questions about how I work with clients and teams.</p>
+        <p>Common questions about how I work with clients and teams — tap a question to open it.</p>
       </div>
-      <div class="faq reveal">
-        <div class="faq-item"><div class="faq-q">What services do you provide?<span class="pm">+</span></div><div class="faq-a"><p>Full-stack web development — Laravel backends, ERP/ERPNext customization, e-commerce platforms, REST API integration and n8n workflow automation.</p></div></div>
-        <div class="faq-item"><div class="faq-q">How do I start working with you?<span class="pm">+</span></div><div class="faq-a"><p>Reach out via email or WhatsApp with your idea or requirements. I'll reply with a clear plan, timeline and a fair quote before we begin.</p></div></div>
-        <div class="faq-item"><div class="faq-q">How long does a project take?<span class="pm">+</span></div><div class="faq-a"><p>A small site takes 1–2 weeks; a full ERP or e-commerce platform typically 4–10+ weeks depending on scope and integrations.</p></div></div>
-        <div class="faq-item"><div class="faq-q">Do you provide revisions &amp; support?<span class="pm">+</span></div><div class="faq-a"><p>Yes — every project includes revisions during development and post-launch support to keep everything running smoothly.</p></div></div>
-        <div class="faq-item"><div class="faq-q">What technologies do you use?<span class="pm">+</span></div><div class="faq-a"><p>Laravel, PHP, MySQL/PostgreSQL, React/Next.js, ERPNext/Frappe (Python) and n8n for automation.</p></div></div>
-        <div class="faq-item"><div class="faq-q">What industries do you work with?<span class="pm">+</span></div><div class="faq-a"><p>E-commerce, ERP, education (LMS) and business automation — for clients in Bangladesh and abroad.</p></div></div>
+      <div class="fq reveal">
+        <aside class="fq-side">
+          <div class="fq-av"><img src="/shots/avatar-pill.png" alt="Romana Idress Ekfa" width="64" height="64"/><span class="fq-live" aria-hidden="true"></span></div>
+          <h3>Still have a question?</h3>
+          <p>Didn't find what you need? Message me directly — I read every message myself.</p>
+          <ul class="fq-stats">
+            <li><b>&lt;24h</b><span>Reply time</span></li>
+            <li><b>GMT+6</b><span>Dhaka, BD</span></li>
+          </ul>
+          <div class="fq-cta">
+            <a class="btn btn-blue" href="mailto:romanaidressekfa@gmail.com"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg> Email me</a>
+            <a class="btn btn-out" href="https://wa.me/8801714893870" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg> WhatsApp</a>
+          </div>
+        </aside>
+        <div class="fq-list">
+          <div class="fq-item open"><button class="fq-q" type="button" aria-expanded="true"><span class="fq-no">01</span><span class="fq-ic"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/></svg></span><span class="fq-t">What services do you provide?</span><span class="fq-pm" aria-hidden="true"></span></button><div class="fq-a"><p>Full-stack web development — Laravel backends, ERP/ERPNext customization, e-commerce platforms, REST API integration and n8n workflow automation.</p></div></div>
+          <div class="fq-item"><button class="fq-q" type="button" aria-expanded="false"><span class="fq-no">02</span><span class="fq-ic"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z"/></svg></span><span class="fq-t">How do I start working with you?</span><span class="fq-pm" aria-hidden="true"></span></button><div class="fq-a"><p>Reach out via email or WhatsApp with your idea or requirements. I'll reply with a clear plan, timeline and a fair quote before we begin.</p></div></div>
+          <div class="fq-item"><button class="fq-q" type="button" aria-expanded="false"><span class="fq-no">03</span><span class="fq-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="fq-t">How long does a project take?</span><span class="fq-pm" aria-hidden="true"></span></button><div class="fq-a"><p>A small site takes 1–2 weeks; a full ERP or e-commerce platform typically 4–10+ weeks depending on scope and integrations.</p></div></div>
+          <div class="fq-item"><button class="fq-q" type="button" aria-expanded="false"><span class="fq-no">04</span><span class="fq-ic"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.7-4.3L3 9"/><path d="M3 4v5h5"/><path d="M4 13a8 8 0 0 0 14.7 4.3L21 15"/><path d="M21 20v-5h-5"/></svg></span><span class="fq-t">Do you provide revisions &amp; support?</span><span class="fq-pm" aria-hidden="true"></span></button><div class="fq-a"><p>Yes — every project includes revisions during development and post-launch support to keep everything running smoothly.</p></div></div>
+          <div class="fq-item"><button class="fq-q" type="button" aria-expanded="false"><span class="fq-no">05</span><span class="fq-ic"><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m14 4-4 16"/></svg></span><span class="fq-t">What technologies do you use?</span><span class="fq-pm" aria-hidden="true"></span></button><div class="fq-a"><p>Laravel, PHP, MySQL/PostgreSQL, React/Next.js, ERPNext/Frappe (Python) and n8n for automation.</p></div></div>
+          <div class="fq-item"><button class="fq-q" type="button" aria-expanded="false"><span class="fq-no">06</span><span class="fq-ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg></span><span class="fq-t">What industries do you work with?</span><span class="fq-pm" aria-hidden="true"></span></button><div class="fq-a"><p>E-commerce, ERP, education (LMS) and business automation — for clients in Bangladesh and abroad.</p></div></div>
+        </div>
       </div>
     </div>
   </section>
@@ -318,6 +336,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="/data.js?v=29"></script>
-  <script src="/app.js?v=141"></script>
+  <script src="/app.js?v=167"></script>
 </body>
 </html>

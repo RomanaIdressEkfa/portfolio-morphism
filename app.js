@@ -40,11 +40,11 @@ function renderProfile(){
   el("heroSocials").innerHTML = hs.map(s=>`<a class="spill" href="${esc(s.url)}" target="_blank" rel="noopener">${s.icon} ${esc(s.t)}</a>`).join("");
 
   el("aboutStats").innerHTML = [
-    {n:40,s:"+",l:"Projects completed"},
-    {n:(p.years_experience||3),s:"+",l:"Years of experience"},
-    {n:20,s:"+",l:"Happy clients"},
-    {n:94,s:"%",l:"Satisfaction rate"}
-  ].map(x=>`<div class="mini"><div class="n" data-count="${x.n}" data-suf="${x.s}">0${x.s}</div><div class="l">${esc(x.l)}</div></div>`).join("");
+    {n:40,s:"+",l:"Projects completed",i:'<path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/>'},
+    {n:(p.years_experience||3),s:"+",l:"Years of experience",i:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'},
+    {n:20,s:"+",l:"Happy clients",i:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>'},
+    {n:94,s:"%",l:"Satisfaction rate",i:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'}
+  ].map(x=>`<div class="mini"><span class="mini-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${x.i}</svg></span><div class="n" data-count="${x.n}" data-suf="${x.s}">0${x.s}</div><div class="l">${esc(x.l)}</div></div>`).join("");
 
   const asEl=el("aboutSkills");
   if(asEl){ const sk=(SKILLS.length?SKILLS.slice(0,8).map(s=>s.name):["Laravel","PHP","MySQL","ERPNext","n8n","React","Next.js","REST APIs"]);
@@ -71,8 +71,21 @@ function renderMarquee(){
 // hidden until a real screenshot is available (its image_url is a thum.io shot of a
 // Cloudflare-protected page that only ever renders the "checking your browser" interstitial)
 const PROJECT_EXCLUSIONS=["Logically Debate v2"];
+/* projects added locally (kept out of the stale Supabase rows); shown right after UBSL */
+const EXTRA_PROJECTS=[
+  {title:"Endo2BMU",category:"Healthcare",featured:true,sort_order:1.1,
+   description:"Patient management system for the Endocrinology Unit 2 at BMU — admissions, discharges, follow-up tracking, doctor & role management, audit logs and Excel export.",
+   tech:["Laravel","PHP","MySQL","Tailwind"],image_url:"/shots/endo2bmu.jpg",live_url:"http://endo2bmu.com/"},
+  {title:"UBSL Marketing — Lead Finder",category:"Marketing CRM",featured:true,sort_order:1.2,
+   description:"Marketing OS for UBSL: a Chrome extension collects businesses from Google Maps by industry and area and sends chosen leads into the CRM, with messaging, nurture sequences and automation.",
+   tech:["Laravel","PHP","MySQL","Chrome Extension","n8n"],image_url:"/shots/ubsl-marketing.jpg",live_url:"https://marketing.ubsbd.com.bd/"},
+  {title:"FreshCart",category:"E-commerce",featured:true,sort_order:1.3,
+   description:"Grocery e-commerce storefront with promo banners, category browsing and product listings, built for fast everyday shopping.",
+   tech:["HTML5","Bootstrap","JavaScript"],image_url:"/shots/freshcart.jpg",live_url:"https://freshcart.codescandy.com/pages/index-2.html"}
+];
 function sortedProjects(){
-  return [...PROJECTS].filter(p=>!PROJECT_EXCLUSIONS.includes(p.title))
+  const titles=new Set(PROJECTS.map(p=>p.title));
+  return [...PROJECTS,...EXTRA_PROJECTS.filter(p=>!titles.has(p.title))].filter(p=>!PROJECT_EXCLUSIONS.includes(p.title))
     .sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)||(a.sort_order||0)-(b.sort_order||0));
 }
 /* work slider: a fanned, auto-advancing stack of project screenshots (glass frame, no text by
@@ -90,8 +103,9 @@ const PROJECT_LINK_OVERRIDES={
   "Bespoke Hotteok":"https://chocolate-icecream.vercel.app/"
 };
 function renderWork(){
-  const stack=el("workStack"); if(!stack) return;
   const list=sortedProjects(); if(!list.length) return;
+  renderPortfolioWheel(list);
+  const stack=el("workStack"); if(!stack) return;
   stack.innerHTML=list.map((p,i)=>{
     const img=PROJECT_IMAGE_OVERRIDES[p.title] || p.image_url || `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(p.live_url||"")}`;
     return `<figure class="work-card" data-i="${i}"><img src="${esc(img)}" alt="${esc(p.title)}" decoding="async"/></figure>`;
@@ -197,104 +211,134 @@ function initWorkSlider(list){
   measure(); render(); start();
 }
 
-/* toolkit wheel: tech-stack cards on the rim of a partly hidden dial. The ring closes exactly
-   (360/N per card), so cards, ticks and group labels stay aligned through every wrap. */
-const TW_GROUPS={"Backend":["#FF6A52","#E6281B"],"Data":["#5F9AC2","#2F5A7A"],"ERP & Automation":["#4DAEFF","#0066CC"],"Frontend":["#A78BFA","#6D28D9"],"DevOps":["#34D399","#047857"]};
-const TW_TOOLS=[
-  ["Laravel","Backend","MVC apps & REST APIs","laravel"],["PHP","Backend","Core language, 8.x","php"],["Composer","Backend","Package management","composer"],
-  ["MySQL","Data","Schemas & query tuning","mysql"],["PostgreSQL","Data","Relational data at scale","postgresql"],
-  ["ERPNext","ERP & Automation","Frappe customisation","erpnext"],["n8n","ERP & Automation","Workflow automation","n8n"],
-  ["JavaScript","Frontend","Interactive UIs","javascript"],["React","Frontend","Component-driven UIs","react"],["Next.js","Frontend","Full-stack React","nextdotjs"],
-  ["Tailwind CSS","Frontend","Utility-first styling","tailwindcss"],["Bootstrap","Frontend","Rapid responsive layouts","bootstrap"],["HTML5","Frontend","Semantic markup","html5"],["CSS3","Frontend","Modern styling","css3"],
-  ["Docker","DevOps","Containerised deploys","docker"],["Git","DevOps","Version control","git"],["GitHub","DevOps","Collaboration & CI","github"],["GitLab","DevOps","Pipelines & repos","gitlab"]
-];
-function initToolWheel(){
-  const stage=el("twStage"), wrapEl=el("twCards"), dial=el("twDial"), readout=el("twReadout");
-  if(!stage) return;
-  const N=TW_TOOLS.length, STEP=360/N, GS=hasGSAP(), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  el("twCount").textContent=N;
-  wrapEl.innerHTML=TW_TOOLS.map(([n,g,d,l],i)=>{
-    const [c1,c2]=TW_GROUPS[g];
-    return `<button class="tw-card" type="button" data-i="${i}" style="--c1:${c1};--c2:${c2}" aria-label="${esc(n)} — ${esc(g)}">
-      <span class="tw-ic"><img src="/logos/${l}.svg" alt="" draggable="false"/></span>
-      <strong>${esc(n)}</strong><small>${esc(d)}</small><em>${esc(g)}</em></button>`;
+/* portfolio wheel: project cards spaced around the rim of a half-submerged rotary dial. Cards sit a
+   fixed angle apart, wrap infinitely, drift slowly on their own and turn in lock-step with the dial. */
+const PF={st:{pos:0},cards:[],list:[],bound:false};
+function renderPortfolioWheel(list){
+  const wrapEl=el("pfCards"); if(!wrapEl||!list.length) return;
+  PF.list=list;
+  wrapEl.innerHTML=list.map((p,i)=>{
+    const img=PROJECT_IMAGE_OVERRIDES[p.title] || p.image_url || `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(p.live_url||"")}`;
+    const tag=(p.tech||[]).slice(0,2).join(" · ")||"Project";
+    return `<button class="pf-card" type="button" data-i="${i}" aria-label="${esc(p.title)}">
+      <img src="${esc(img)}" alt="" decoding="async" draggable="false"/>
+      <span class="pf-no">${String(i+1).padStart(2,"0")}</span><span class="pf-go">${ICON.arrow}</span>
+      <span class="pf-cap"><small>${esc(tag)}</small><strong>${esc(p.title)}</strong></span></button>`;
   }).join("");
-  // one label per group, centred on that group's cards
-  const groups={}; TW_TOOLS.forEach(([,g],i)=>(groups[g]=groups[g]||[]).push(i));
-  dial.innerHTML=Object.entries(groups).map(([g,ix])=>
-    `<span class="tw-label" style="--a:${((ix[0]+ix[ix.length-1])/2*STEP).toFixed(2)}deg;--c2:${TW_GROUPS[g][1]}">${esc(g)}</span>`).join("");
-  const cards=[...wrapEl.children];
-  const st={pos:0}; let scrollOff=0, active=-1, tween=null, R=520, cy=680;
+  PF.cards=[...wrapEl.children];
+  el("pfTotal").textContent=String(list.length).padStart(2,"0");
+  if(!PF.bound){ PF.bound=true; bindPortfolioWheel(); }
+  PF.measure(); PF.render(true);
+}
+function bindPortfolioWheel(){
+  const stage=el("pfStage"), dial=el("pfDial");
+  const GS=hasGSAP(), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches, st=PF.st;
+  let scrollOff=0, active=-1, tween=null, R=736, D=560, STEP=10.6, ch=290;
+  const N=()=>PF.list.length;
+  const wrapN=v=>{ const n=N(); v%=n; if(v>n/2) v-=n; if(v<-n/2) v+=n; return v; };
+  const total=()=>st.pos+scrollOff;
 
-  const norm=a=>{ a%=360; if(a>180) a-=360; if(a<-180) a+=360; return a; };
-  function measure(){
-    const cw=cards[0].offsetWidth, ch=cards[0].offsetHeight, gap=cw*.2;
-    R=Math.max((cw+gap)/(2*Math.sin(Math.PI/N)), 260);
-    cy=R+ch/2+70;
-    const dR=R-ch/2-34;
-    stage.style.setProperty("--cy",cy+"px"); stage.style.setProperty("--dr",dR+"px");
-    stage.style.height=Math.round(cy-dR*.42)+"px";
-  }
-  function render(){
-    const total=st.pos+scrollOff, near=((Math.round(total)%N)+N)%N;
-    dial.style.transform=`translate(-50%,-50%) rotate(${(-total*STEP).toFixed(2)}deg)`;
-    cards.forEach((c,i)=>{
-      const a=norm((i-total)*STEP), d=Math.abs(a)/STEP, k=Math.max(0,1-d);
-      const op=d<=3.4?1:Math.max(0,1-(d-3.4)/1);
-      c.style.transform=`translate(-50%,-50%) rotate(${a.toFixed(2)}deg) translateY(${(-R-28*k).toFixed(1)}px) scale(${(1+.14*k).toFixed(3)})`;
+  PF.measure=()=>{
+    const c=PF.cards[0]; if(!c) return;
+    const cw=c.offsetWidth; ch=c.offsetHeight;
+    D=cw*1.4; R=D+ch/2+14;
+    STEP=(cw*1.12/R)*180/Math.PI;                // a clear gap (~12% of a card) between neighbours
+    const cy=R+20+ch*.575+18;                    // active card's top lands ~18px below the stage top
+    stage.style.setProperty("--cy",cy+"px"); stage.style.setProperty("--d",D+"px");
+    stage.style.height=Math.round(cy-D*.32)+"px";   // upper part of the dial face shows
+  };
+  PF.render=(force)=>{
+    const n=N(); if(!n) return;
+    const t=total(), near=((Math.round(t)%n)+n)%n;
+    dial.style.transform=`translate(-50%,-50%) rotate(${(-t*STEP).toFixed(2)}deg)`;
+    PF.cards.forEach((c,i)=>{
+      const off=wrapN(i-t), d=Math.abs(off), k=Math.max(0,1-d);  // k: 1 at centre, 0 one step out
+      const op=d<=2.6?1:Math.max(0,1-(d-2.6)/.6);
+      c.style.transform=`translate(-50%,-50%) rotate(${(off*STEP).toFixed(2)}deg) translateY(${(-R-20*k).toFixed(1)}px) scale(${(1+.15*k).toFixed(3)})`;
       c.style.opacity=op.toFixed(3); c.style.visibility=op>0?"visible":"hidden";
-      c.style.zIndex=100-Math.round(d*10);
+      c.style.zIndex=200-Math.round(d*20);
+      c.style.setProperty("--dim",Math.min(.18,d*.07).toFixed(3));
       c.tabIndex=i===near?0:-1;
       c.classList.toggle("is-active",i===near);
     });
-    if(near!==active){
-      active=near; const [n,g]=TW_TOOLS[near];
-      readout.innerHTML=`<b>${String(near+1).padStart(2,"0")}</b> / ${String(N).padStart(2,"0")}<span>${esc(n)} · ${esc(g)}</span>`;
+    if(near!==active||force){
+      active=near;
+      el("pfIndex").textContent=String(near+1).padStart(2,"0");
+      el("pfName").textContent=PF.list[near].title;
     }
-  }
-  function animateTo(target){
+  };
+  function animateTo(target,dur){
     if(tween) tween.kill();
-    if(!GS||reduce){ st.pos=target; render(); return; }
-    tween=gsap.to(st,{pos:target,duration:.8,ease:"power3.out",onUpdate:render});
+    if(!GS||reduce){ st.pos=target; PF.render(); return; }
+    tween=gsap.to(st,{pos:target,duration:dur||Math.min(1.4,.55+Math.abs(target-st.pos)*.12),ease:"power3.out",onUpdate:PF.render});
   }
-  const wrapN=v=>{ v%=N; if(v>N/2) v-=N; if(v<-N/2) v+=N; return v; };
-  const total=()=>st.pos+scrollOff;
-  function goTo(i){ animateTo(st.pos+wrapN(i-total())); }
   const snap=()=>animateTo(st.pos+Math.round(total())-total());
+  const goTo=i=>animateTo(st.pos+wrapN(i-total()));
+  const step=dir=>animateTo(st.pos+Math.round(total())-total()+dir);
+  el("pfPrev").addEventListener("click",()=>step(-1));
+  el("pfNext").addEventListener("click",()=>step(1));
 
-  /* drag: arc length of one card step maps to one card */
+  /* drag: one card's arc length per card, with release momentum */
   let drag=null, dragged=false;
+  const arc=()=>R*STEP*Math.PI/180;
   stage.addEventListener("pointerdown",e=>{
     if(e.button!==0) return;
     drag={x:e.clientX,pos:st.pos,lx:e.clientX,lt:performance.now(),v:0}; dragged=false; if(tween) tween.kill();
   });
   addEventListener("pointermove",e=>{
     if(!drag) return;
-    const dx=e.clientX-drag.x; if(!dragged&&Math.abs(dx)<6) return; dragged=true;
-    const t=performance.now(); drag.v=(e.clientX-drag.lx)/Math.max(1,t-drag.lt); drag.lx=e.clientX; drag.lt=t;
-    st.pos=drag.pos-dx/(R*STEP*Math.PI/180); render();
+    const dx=e.clientX-drag.x; if(!dragged&&Math.abs(dx)<6) return;
+    if(!dragged){ dragged=true; stage.classList.add("is-drag"); }
+    const t=performance.now(), v=(e.clientX-drag.lx)/Math.max(1,t-drag.lt);
+    drag.v=drag.v*.6+v*.4; drag.lx=e.clientX; drag.lt=t;
+    st.pos=drag.pos-dx/arc(); PF.render();
   });
   addEventListener("pointerup",()=>{
     if(!drag) return;
-    if(dragged){ const arc=R*STEP*Math.PI/180; animateTo(st.pos+Math.round(total()-drag.v*160/arc)-total()); }
+    if(dragged){ stage.classList.remove("is-drag"); animateTo(st.pos+Math.round(total()-drag.v*220/arc())-total()); }
     drag=null;
   });
-  cards.forEach(c=>c.addEventListener("click",()=>{ if(dragged){ dragged=false; return; } goTo(+c.dataset.i); }));
-  stage.addEventListener("keydown",e=>{
-    if(e.key==="ArrowRight"){ e.preventDefault(); goTo(active+1); }
-    else if(e.key==="ArrowLeft"){ e.preventDefault(); goTo(active-1); }
+  el("pfCards").addEventListener("click",e=>{
+    const c=e.target.closest(".pf-card"); if(!c) return;
+    if(dragged){ dragged=false; return; }
+    const i=+c.dataset.i;
+    if(i===active){ const p=PF.list[i], url=PROJECT_LINK_OVERRIDES[p.title]||p.live_url; if(url) open(url,"_blank","noopener"); }
+    else goTo(i);
   });
-
-  /* scrolling past the section turns the wheel a few cards; it settles on a card when scrolling stops */
+  stage.addEventListener("keydown",e=>{
+    if(e.key==="ArrowRight"){ e.preventDefault(); step(1); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); step(-1); }
+  });
+  /* horizontal wheel / trackpad swipe scrubs directly; vertical page scroll turns it a few cards */
+  let wIdle;
+  stage.addEventListener("wheel",e=>{
+    const dx=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:(e.shiftKey?e.deltaY:0); if(!dx) return;
+    e.preventDefault(); if(tween) tween.kill();
+    st.pos+=dx/arc(); PF.render();
+    clearTimeout(wIdle); wIdle=setTimeout(snap,140);
+  },{passive:false});
   if(GS&&!reduce){
     let idle;
+    let hover=false, inView=false, holdUntil=0;
     ScrollTrigger.create({trigger:stage,start:"top bottom",end:"bottom top",onUpdate:s=>{
-      scrollOff=s.progress*5-2.5; render();
-      clearTimeout(idle); idle=setTimeout(()=>{ if(!drag) snap(); },180);
+      scrollOff=s.progress*3-1.5; PF.render();
+      clearTimeout(idle); idle=setTimeout(()=>{ if(!drag&&hover) snap(); },180);
     }});
+    ScrollTrigger.create({trigger:stage,start:"top 80%",once:true,onEnter:()=>{ st.pos-=4; PF.render(); animateTo(st.pos+4,1.8); }});
+    /* auto-rotate: a slow continuous drift while the wheel is on screen; hovering pauses it on the
+       nearest card, and any drag / click / key holds it for a few seconds */
+    const hold=()=>{ holdUntil=performance.now()+3500; };
+    new IntersectionObserver(([e])=>{ inView=e.isIntersecting; },{threshold:.15}).observe(stage);
+    stage.addEventListener("pointerenter",e=>{ if(e.pointerType==="mouse"){ hover=true; snap(); } });
+    stage.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse") hover=false; });
+    ["pointerdown","keydown","wheel"].forEach(t=>stage.addEventListener(t,hold,{passive:true}));
+    [el("pfPrev"),el("pfNext")].forEach(b=>b.addEventListener("click",hold));
+    gsap.ticker.add((time,dt)=>{
+      if(!inView||hover||drag||(tween&&tween.isActive())||performance.now()<holdUntil||document.hidden) return;
+      st.pos+=Math.min(dt,50)/1000*.28; PF.render();
+    });
   }
-  let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ measure(); render(); },150); });
-  measure(); render();
+  let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ PF.measure(); PF.render(); },150); });
 }
 
 const XP_COLORS=[["#FF6A52","#E6281B"],["#4DAEFF","#0066CC"],["#34D399","#047857"],["#FF7A96","#C72A50"],["#A78BFA","#6D28D9"],["#5F9AC2","#2F5A7A"]];
@@ -342,7 +386,8 @@ const REVIEW_METRICS={
   "Abdullah Al Zubair":"Most Reliable Engineer I've Managed",
   "Laeeq MD Zobayer Hossain":"Zero-Touch Social Media Automation"
 };
-const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib"];
+// "MD Alifuzzaman Alif" is hidden for now — remove him from this list to show his review again
+const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib", "MD Alifuzzaman Alif"];
 // real photo + corrected name/role for a client, immune to stale Supabase data (same pattern as the CV/Resume pin)
 const REVIEW_OVERRIDES={
   "Tariqul Islam":{name:"Hamza Bin Hakim",role:"CEO",avatar:"/shots/hamza-bin-hakim.jpg",
@@ -449,8 +494,12 @@ function revealObserve(nodes){
 }
 function gsapReveal(n){
   if(n.classList.contains("g-done")) return; n.classList.add("g-done");
-  gsap.fromTo(n,{y:36,opacity:0},{y:0,opacity:1,duration:.8,ease:"power3.out",overwrite:"auto",
-    scrollTrigger:{trigger:n,start:"top 88%",onEnter:()=>countAll(n)}});
+  // each block enters from the side it sits on; centred blocks rise from below
+  const L=".about > .reveal:first-child, .svc-interactive, .xp-interactive, .story-copy", R=".about-side, .rev-carousel";
+  const from=n.matches(L)?{x:-90,opacity:0,rotate:-1.5}:n.matches(R)?{x:90,opacity:0,rotate:1.5}
+    :n.matches(".sec-head")?{y:60,opacity:0,scale:.94}:{y:60,opacity:0};
+  gsap.fromTo(n,from,{x:0,y:0,rotate:0,scale:1,opacity:1,duration:1,ease:"power3.out",overwrite:"auto",clearProps:"transform",
+    scrollTrigger:{trigger:n,start:"top 90%",onEnter:()=>countAll(n)}});
   const ph=n.querySelector?.(".ph");
   if(ph) gsap.fromTo(ph,{scale:1.14},{scale:1,duration:1.1,ease:"power3.out",scrollTrigger:{trigger:n,start:"top 88%"}});
 }
@@ -513,14 +562,21 @@ function initStory(){
   [700,1500,3000].forEach(t=>setTimeout(()=>ScrollTrigger.refresh(),t));
 }
 function initFaq(){
-  document.querySelectorAll(".faq-item").forEach(item=>{
-    const q=item.querySelector(".faq-q"), a=item.querySelector(".faq-a");
-    q.addEventListener("click",()=>{
-      const open=item.classList.contains("open");
-      document.querySelectorAll(".faq-item.open").forEach(o=>{o.classList.remove("open");o.querySelector(".faq-a").style.maxHeight="0";});
-      if(!open){ item.classList.add("open"); a.style.maxHeight=a.scrollHeight+"px"; }
+  /* one open at a time; height animates from the measured answer height */
+  const items=[...document.querySelectorAll(".fq-item")];
+  const set=(item,open)=>{
+    const a=item.querySelector(".fq-a");
+    item.classList.toggle("open",open); item.querySelector(".fq-q").setAttribute("aria-expanded",open);
+    a.style.maxHeight=open?a.scrollHeight+"px":"0";
+  };
+  items.forEach(item=>{
+    set(item,item.classList.contains("open"));
+    item.querySelector(".fq-q").addEventListener("click",()=>{
+      const open=!item.classList.contains("open");
+      items.forEach(o=>set(o,o===item&&open));
     });
   });
+  addEventListener("resize",()=>items.forEach(i=>{ if(i.classList.contains("open")) set(i,true); }));
 }
 
 function initButtonFX(){
@@ -554,15 +610,24 @@ function initGsap(){
   if(!hasGSAP()){ document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("in")); return; }
   gsap.registerPlugin(ScrollTrigger);
   document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("g-done","in"));
-  // hero intro — fromTo guarantees a visible end state; paused until the preloader hands off
-  window.__heroIntro = gsap.timeline({paused:true,defaults:{ease:"power3.out"}})
-    .fromTo("#heroId",{y:10},{y:0,duration:.6},.1)
-    .fromTo(".hero h1",{y:14},{y:0,duration:.8},"-=.3")
-    .fromTo(".hero .lead",{y:10},{y:0,duration:.5},"-=.5")
-    .fromTo(".hero-socials .spill",{y:22,autoAlpha:0},{y:0,autoAlpha:1,stagger:.08,duration:.5},"-=.35")
-    .fromTo(".scrollrow",{autoAlpha:0},{autoAlpha:1,duration:.6},"-=.2");
-  // safety: if anything interrupts the timeline, force content visible shortly after
-  setTimeout(()=>document.querySelectorAll("#heroId,.hero h1,.hero .lead").forEach(n=>{n.style.opacity="1";n.style.visibility="visible";}),2600);
+  // hero intro: built when the preloader hands off (hydrate re-renders the social pills first,
+  // so the timeline must target the final nodes). Every element arrives from its own direction.
+  window.__heroIntro={play(){
+    const h1=document.querySelector(".hero h1");
+    if(h1&&h1.firstChild&&h1.firstChild.nodeType===3){ const s=document.createElement("span"); s.className="hl"; s.textContent=h1.firstChild.textContent; h1.replaceChild(s,h1.firstChild); }
+    const pills=[...document.querySelectorAll(".hero-socials .spill")];
+    const dirs=[{x:-140,rotate:-12},{y:-90,rotate:6},{y:90,rotate:-6},{x:140,rotate:12}];
+    gsap.timeline({defaults:{ease:"power3.out"},onComplete:()=>gsap.set([h1,".hero h1 .hl",".hero h1 .grad","#heroId",".hero .lead",pills,".scrollrow"],{clearProps:"all"})})
+      .fromTo("#heroId",{y:-70,scale:.7,autoAlpha:0},{y:0,scale:1,autoAlpha:1,duration:.8,ease:"back.out(1.7)"},.05)
+      .fromTo(".hero h1 .hl",{x:-120,autoAlpha:0},{x:0,autoAlpha:1,duration:.9},.25)
+      .fromTo(".hero h1 .grad",{x:120,autoAlpha:0},{x:0,autoAlpha:1,duration:.9},.38)
+      .fromTo(".hero .lead",{y:50,autoAlpha:0,filter:"blur(8px)"},{y:0,autoAlpha:1,filter:"blur(0px)",duration:.8},.6)
+      .fromTo(pills,{autoAlpha:0,scale:.6,x:i=>dirs[i%4].x||0,y:i=>dirs[i%4].y||0,rotate:i=>dirs[i%4].rotate},
+        {autoAlpha:1,scale:1,x:0,y:0,rotate:0,duration:.85,ease:"back.out(1.6)",stagger:.09},.8)
+      .fromTo(".scrollrow",{y:40,autoAlpha:0},{y:0,autoAlpha:1,duration:.6},1.25);
+    // safety: never leave hero content hidden
+    setTimeout(()=>document.querySelectorAll("#heroId,.hero h1,.hero h1 .hl,.hero h1 .grad,.hero .lead,.hero-socials .spill,.scrollrow").forEach(n=>{n.style.opacity="1";n.style.visibility="visible";}),3200);
+  }};
 }
 
 /* boot */
@@ -573,9 +638,42 @@ function hydrate(){
   renderProfile(); renderMarquee(); renderWork(); renderExperience(); renderReviews();
   revealObserve(document.querySelectorAll(".reveal"));
   initCounters();
+  if(typeof animateGroups==="function"&&document.querySelector(".scroll-prog")) animateGroups();
 }
 /* services: click-to-reveal list -> live preview panel, connected by glowing flow-lines
    converging on a center node (tablist/tabpanel pattern + an SVG wire diagram overlay) */
+/* services on phones: the list becomes a swipeable deck of gradient cards (each shows its full
+   description, so the separate preview isn't needed); dots + a one-time nudge show it can be swiped */
+function initSvcSwipe(){
+  const box=document.querySelector(".svc-interactive"), list=box&&box.querySelector(".svc-list"); if(!list) return;
+  const items=[...list.querySelectorAll(".svc-item")], mq=matchMedia("(max-width:760px)");
+  const dots=document.createElement("div"); dots.className="svc-dots"; dots.setAttribute("aria-hidden","true");
+  dots.innerHTML=items.map((_,i)=>`<i data-i="${i}"></i>`).join("")+`<span class="svc-swipe">Swipe <b>→</b></span>`;
+  list.after(dots);
+  const off=it=>{ const a=it.getBoundingClientRect(), b=list.getBoundingClientRect(); return a.left+a.width/2-(b.left+b.width/2); }; // card centre vs deck centre
+  const go=i=>list.scrollBy({left:off(items[i]),behavior:"smooth"});
+  box._svcGo=go;
+  list.addEventListener("touchstart",()=>{ box._svcHold=Date.now()+6000; },{passive:true});
+  dots.addEventListener("click",e=>{ const d=e.target.closest("i"); if(d){ box._svcHold=Date.now()+6000; go(+d.dataset.i); } });
+  let cur=-1, raf=0;
+  const sync=()=>{ raf=0; if(!mq.matches) return;
+    let best=0,bd=1e9;
+    items.forEach((it,i)=>{ const d=Math.abs(off(it)); if(d<bd){bd=d;best=i;} });
+    if(best===cur) return; cur=best;
+    if(box._svcSelect) box._svcSelect(best);   // keeps the screenshot panel + tab state in step with the deck
+    [...dots.children].forEach((d,i)=>d.classList&&d.classList.toggle("on",i===best));
+    if(best>0) dots.classList.add("used");
+  };
+  list.addEventListener("scroll",()=>{ if(!raf) raf=requestAnimationFrame(sync); },{passive:true});
+  items.forEach((it,i)=>it.addEventListener("click",()=>{ if(mq.matches&&i!==cur) go(i); }));
+  addEventListener("resize",()=>{ cur=-1; sync(); });
+  sync();
+  /* first time the deck scrolls into view, peek at the next card so it reads as swipeable */
+  if(!matchMedia("(prefers-reduced-motion: reduce)").matches) new IntersectionObserver((es,o)=>{
+    if(!es[0].isIntersecting||!mq.matches) return; o.disconnect();
+    setTimeout(()=>{ list.scrollBy({left:90,behavior:"smooth"}); setTimeout(()=>list.scrollTo({left:0,behavior:"smooth"}),650); },500);
+  },{threshold:.6}).observe(list);
+}
 function initSvcTabs(){
   const container=document.querySelector(".svc-interactive"); if(!container) return;
   const list=container.querySelector(".svc-list");
@@ -653,13 +751,18 @@ function initSvcTabs(){
     });
   });
   select(0);
+  container._svcSelect=select;
   let resizeT; window.addEventListener("resize",()=>{ clearTimeout(resizeT); resizeT=setTimeout(layoutFlow,120); });
   setTimeout(layoutFlow,900); // after the scroll-reveal settles, in case it nudged layout
 
   /* auto-advance one service every 4s while idle; pause on hover/focus, resume on leave */
   let autoTimer=null;
   const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const startAuto=()=>{ if(reduceMotion||autoTimer) return; autoTimer=setInterval(()=>select((active+1)%items.length),4000); };
+  const startAuto=()=>{ if(reduceMotion||autoTimer) return; autoTimer=setInterval(()=>{
+    if((container._svcHold||0)>Date.now()) return;
+    const n=(active+1)%items.length;
+    if(container._svcGo&&matchMedia("(max-width:760px)").matches) container._svcGo(n); else select(n);  // phones: glide the deck
+  },4000); };
   const stopAuto=()=>{ clearInterval(autoTimer); autoTimer=null; };
   container.addEventListener("mouseenter",stopAuto);
   container.addEventListener("mouseleave",startAuto);
@@ -727,9 +830,15 @@ function initPreloader(onDone){
     .fromTo(pl,{"--sheen":"130%"},{"--sheen":"-30%",duration:.6,ease:"power2.inOut",immediateRender:false},2.05);
   tl.to(word,{scale:1,duration:.45,ease:"power3.inOut"},2.1);
   for(let k=0;k<target.length;k++) tl.add(morph(k),2.25+k*.075);
-  tl.fromTo(pl,{"--sheen":"130%"},{"--sheen":"-30%",duration:.5,ease:"power2.inOut",immediateRender:false},3.0)
-    .to(word,{scale:.92,duration:.5,ease:"power2.in"},3.55)
-    .fromTo(pl,{clipPath:"circle(75% at 50% 50%)"},{clipPath:"circle(0% at 50% 50%)",duration:.6,ease:"power3.in",immediateRender:false},3.5);
+  /* PORTFOLIO lights up: letters glow, a bloom swells behind them and light rays fan out of the word */
+  const rays=pl.querySelector(".pl-rays"), bloom=pl.querySelector(".pl-bloom");
+  tl.add(()=>word.classList.add("lit"),2.55)
+    .fromTo(bloom,{opacity:0,scale:.4},{opacity:1,scale:1,duration:.7,ease:"power2.out"},2.55)
+    .fromTo(rays,{opacity:0,scale:.5,rotation:-12},{opacity:1,scale:1,rotation:6,duration:1.4,ease:"power2.out"},2.6)
+    .fromTo(pl,{"--sheen":"130%"},{"--sheen":"-30%",duration:.5,ease:"power2.inOut",immediateRender:false},3.0)
+    .to(word,{scale:.92,duration:.5,ease:"power2.in"},3.9)
+    .to([rays,bloom],{opacity:0,duration:.4},3.85)
+    .fromTo(pl,{clipPath:"circle(75% at 50% 50%)"},{clipPath:"circle(0% at 50% 50%)",duration:.6,ease:"power3.in",immediateRender:false},3.85);
   pl.querySelector(".pl-skip").addEventListener("click",()=>tl.progress(1));
   onKey=e=>{ if(e.key==="Escape"||e.key==="Enter") tl.progress(1); };
   document.addEventListener("keydown",onKey);
@@ -743,11 +852,13 @@ function initParticlePortrait(){
   const chips=[...wrap.querySelectorAll(".sp-chip")];
   const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const BUCKETS=Array.from({length:8},(_,i)=>{ const t=i/7; return `rgba(${Math.round(110-90*t)},${Math.round(150-118*t)},${Math.round(220-150*t)},${(.18+.78*t).toFixed(2)})`; });
-  let pts=[], W=0, img=null, scrollP=0, inView=true, running=false; const t0=performance.now();
+  let pts=[], W=0, OFF=0, img=null, scrollP=hasGSAP()?0:1, inView=true, running=false; const t0=performance.now();
   const mouse={x:-9999,y:-9999};
+  const touch=matchMedia("(hover: none), (pointer: coarse)").matches; let touching=false;
   function build(){
     const dpr=Math.min(devicePixelRatio||1,2); W=disc.getBoundingClientRect().width;
-    cv.width=Math.round(W*dpr); cv.height=Math.round(W*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+    OFF=W*.2; const CW=W+2*OFF;                                            // canvas overhangs the disc on every side
+    cv.width=Math.round(CW*dpr); cv.height=Math.round(CW*dpr); ctx.setTransform(dpr,0,0,dpr,OFF*dpr,OFF*dpr);
     const gap=W<400?4.5:5.5, inner=W*.86;                                  // portrait lives inside the inner ring
     const dw=inner*.98, ox=(W-dw)/2, oy=W*.12;                             // face centred, shoulders run to the rim
     const dh=dw*img.height/img.width, sw=Math.round(dw/gap), sh=Math.round(dh/gap);
@@ -759,17 +870,27 @@ function initParticlePortrait(){
       const i=(y*sw+x)*4, lum=(d[i]*.299+d[i+1]*.587+d[i+2]*.114)/255;
       if(d[i+3]<40||lum>.88) continue;                                     // drop the white studio background
       const dk=Math.min(1,Math.max(0,(1-lum-.12)/.62));
-      const ang=Math.random()*Math.PI*2, rad=W*(.4+Math.random()*.12);      // scattered home: an orbit ring around the rim
+      const ang=Math.random()*Math.PI*2, rad=W*(.16+Math.sqrt(Math.random())*.52); // scattered home: a cloud around the disc
       const p={hx,hy,ang,rad,spd:.15+Math.random()*.25,b:Math.min(7,Math.floor(dk*8)),r:gap*(.18+.32*dk),vx:0,vy:0,x:0,y:0};
       const prev=old[pts.length]; p.x=prev?prev.x:c+Math.cos(ang)*rad; p.y=prev?prev.y:c+Math.sin(ang)*rad;
       pts.push(p);
     }
   }
+  /* how "formed" the face is, measured live from where the disc sits on screen right now (no cached
+     scroll offsets, so it stays right after resizes / rotation): 0 while its centre is near the bottom,
+     1 across the middle band, back to 0 as it nears the top — the same both scroll directions */
+  const ss=(a,b,x)=>{ const t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); };
+  const formed=()=>{ const r=wrap.getBoundingClientRect(), t=(innerHeight-(r.top+r.height/2))/innerHeight; return ss(.08,.38,t)*(1-ss(.68,.98,t)); };
   function frame(now){
     if(!inView){ running=false; return; }
+    scrollP=formed();
     const sp=scrollP, disp=reduce?0:1-sp;
     const e=disp*disp*(3-2*disp), t=(now-t0)/1000, c=W/2, R=W<400?55:85, R2=R*R;
-    ctx.clearRect(0,0,W,W);
+    if(touch&&!touching&&!reduce){
+      const k=(t%5)/1.8;
+      if(k<1){ mouse.x=W*(-.1+1.2*k); mouse.y=W*(.3+.4*Math.sin(k*Math.PI)); } else mouse.x=mouse.y=-9999;
+    }
+    ctx.clearRect(-OFF,-OFF,W+2*OFF,W+2*OFF);
     const paths=BUCKETS.map(()=>new Path2D());
     for(const p of pts){
       const a=p.ang+t*p.spd, ox=c+Math.cos(a)*p.rad, oy=c+Math.sin(a)*p.rad;
@@ -789,17 +910,35 @@ function initParticlePortrait(){
     build(); kick();
     let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ build(); kick(); },150); });
     new IntersectionObserver(es=>{ inView=es[0].isIntersecting; kick(); },{rootMargin:"200px"}).observe(section);
-    if(hasGSAP()) ScrollTrigger.create({trigger:section,start:"top 95%",end:"top 45%",onUpdate:s=>{ scrollP=s.progress; }});
     if(reduce) return;
     addEventListener("pointermove",e=>{
-      const r=cv.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top;
+      const r=disc.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top;
       const w=wrap.getBoundingClientRect(), nx=(e.clientX-w.left)/w.width-.5, ny=(e.clientY-w.top)/w.height-.5;
       if(Math.abs(nx)<1&&Math.abs(ny)<1){
         disc.style.transform=`rotateY(${nx*12}deg) rotateX(${-ny*12}deg)`;
         chips.forEach((ch,i)=>{ const k=(i+1)*10; ch.style.translate=`${nx*k}px ${ny*k}px`; });
       }
     },{passive:true});
-    section.addEventListener("pointerleave",()=>{ mouse.x=mouse.y=-9999; disc.style.transform=""; chips.forEach(ch=>ch.style.translate=""); });
+    section.addEventListener("pointerleave",()=>{ if(touch) return; mouse.x=mouse.y=-9999; disc.style.transform=""; chips.forEach(ch=>ch.style.translate=""); });
+    /* tap / click: the dots burst away from the finger, then spring back into the face */
+    const burst=(x,y,power)=>{ for(const p of pts){ const dx=p.x-x, dy=p.y-y, d=Math.hypot(dx,dy)||1, f=power*Math.exp(-d/(W*.3)); p.vx+=dx/d*f; p.vy+=dy/d*f; } };
+    disc.addEventListener("pointerdown",e=>{ const r=disc.getBoundingClientRect(); burst(e.clientX-r.left,e.clientY-r.top,touch?60:38); },{passive:true});
+    if(!touch) return;
+    /* touch: dragging a finger over the face (even mid-scroll) pushes the dots aside */
+    const setT=e=>{ const tt=e.touches[0]; if(!tt) return; touching=true; const r=disc.getBoundingClientRect(); mouse.x=tt.clientX-r.left; mouse.y=tt.clientY-r.top; };
+    disc.addEventListener("touchstart",setT,{passive:true}); disc.addEventListener("touchmove",setT,{passive:true});
+    disc.addEventListener("touchend",()=>{ touching=false; mouse.x=mouse.y=-9999; },{passive:true});
+    /* phone tilt (gyroscope) turns the disc and drifts the chips; iOS asks permission on the first tap */
+    let base=null;
+    const onOri=e=>{
+      if(e.gamma==null) return; if(!base) base={g:e.gamma,b:e.beta};
+      const gx=Math.max(-1,Math.min(1,(e.gamma-base.g)/22)), gy=Math.max(-1,Math.min(1,(e.beta-base.b)/22));
+      disc.style.transform=`rotateY(${(gx*16).toFixed(1)}deg) rotateX(${(-gy*16).toFixed(1)}deg)`;
+      chips.forEach((ch,i)=>{ const k=(i+1)*10; ch.style.translate=`${(gx*k).toFixed(1)}px ${(gy*k).toFixed(1)}px`; });
+    };
+    const DOE=window.DeviceOrientationEvent;
+    if(DOE&&typeof DOE.requestPermission==="function") disc.addEventListener("click",()=>DOE.requestPermission().then(s=>{ if(s==="granted") addEventListener("deviceorientation",onOri); }).catch(()=>{}),{once:true});
+    else if(DOE) addEventListener("deviceorientation",onOri,{passive:true});
   }).catch(()=>{});
 }
 function initAbirCursor(){
@@ -839,7 +978,80 @@ function initAbirCursor(){
     requestAnimationFrame(frame);
   })();
 }
-function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); initToolWheel(); refreshLive();
+/* scroll motion (AOS-style, GSAP-driven): headings rise word by word out of a mask, eyebrow rules
+   draw in, and card groups enter with per-group choreography. Runs again after each hydrate so
+   re-rendered nodes animate too; every node is flagged so it only ever animates once. */
+const MOTION_GROUPS=[
+  [".svc-item",{x:-46,rotate:-2}],
+  [".xp-item",{x:-46,rotate:-2}],
+  [".about-side .mini",(i)=>({x:i%2?50:-50,y:30,rotate:i%2?4:-4})],
+  [".about-skills span",{scale:.5,y:16},"back.out(2.2)"],
+  [".fq-item",(i)=>({x:i%2?46:-46})],
+  [".fq-side",{y:50,scale:.94}],
+  [".contact .socs a",{scale:.3,y:20},"back.out(2.6)"],
+  [".contact-actions .btn",{y:26,scale:.9},"back.out(1.8)"]
+];
+function animateGroups(){
+  if(!hasGSAP()||matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  MOTION_GROUPS.forEach(([sel,from,ease])=>{
+    const nodes=[...document.querySelectorAll(sel)].filter(n=>!n.dataset.mo); if(!nodes.length) return;
+    nodes.forEach((n,i)=>{ n.dataset.mo=1; gsap.set(n,{opacity:0,...(typeof from==="function"?from(i):from)}); });
+    ScrollTrigger.batch(nodes,{start:"top 92%",once:true,onEnter:batch=>gsap.to(batch,{opacity:1,x:0,y:0,rotate:0,scale:1,
+      duration:.85,ease:ease||"power3.out",stagger:.08,overwrite:true,clearProps:"transform,opacity,translate,rotate,scale"})});
+  });
+}
+function initMotion(){
+  if(!hasGSAP()||matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  /* reading-progress bar along the top edge */
+  const bar=document.createElement("div"); bar.className="scroll-prog"; bar.setAttribute("aria-hidden","true"); document.body.appendChild(bar);
+  gsap.to(bar,{scaleX:1,ease:"none",scrollTrigger:{start:0,end:"max",scrub:.25}});
+  document.querySelectorAll(".sec-head h2").forEach(h=>{
+    h.setAttribute("aria-label",h.textContent.trim());
+    h.innerHTML=h.textContent.trim().split(/\s+/).map(w=>`<span class="wm" aria-hidden="true"><span class="wi">${esc(w)}</span></span>`).join(" ");
+    gsap.fromTo(h.querySelectorAll(".wi"),{yPercent:115,rotate:7},{yPercent:0,rotate:0,duration:1,ease:"power4.out",stagger:.08,
+      scrollTrigger:{trigger:h,start:"top 90%",once:true}});
+  });
+  document.querySelectorAll(".sec-head p").forEach(p=>gsap.fromTo(p,{opacity:0,y:18,filter:"blur(6px)"},{opacity:1,y:0,filter:"blur(0px)",duration:.9,delay:.25,ease:"power3.out",
+    clearProps:"filter",scrollTrigger:{trigger:p,start:"top 92%",once:true}}));
+  document.querySelectorAll(".eyebrow").forEach(e=>e.classList.add("eb-draw"));
+  ScrollTrigger.batch(".eyebrow.eb-draw",{start:"top 94%",once:true,onEnter:b=>b.forEach(e=>e.classList.add("eb-in"))});
+  /* story portrait swings in as its dots assemble */
+  const sp=document.querySelector(".story-portrait");
+  if(sp) gsap.fromTo(sp,{scale:.82,rotate:-8,y:40},{scale:1,rotate:0,y:0,ease:"none",
+    scrollTrigger:{trigger:".story",start:"top 95%",end:"top 35%",scrub:.6}});
+  animateGroups();
+}
+/* touch screens get the abir colours too: a burst on every tap and a light trail while the finger drags */
+function initTouchAbir(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(!matchMedia("(hover: none), (pointer: coarse)").matches) return;
+  const COLORS=["233,30,99","255,87,34","255,193,7","76,175,80","33,150,243","156,39,176","255,64,129","0,188,212"];
+  const cv=document.createElement("canvas"); cv.setAttribute("aria-hidden","true");
+  cv.style.cssText="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9500";
+  document.body.appendChild(cv);
+  const ctx=cv.getContext("2d"), dpr=Math.min(devicePixelRatio||1,2);
+  let W=0,H=0,parts=[],running=false,last={x:0,y:0,t:0};
+  const size=()=>{ W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };
+  size(); addEventListener("resize",size);
+  const spawn=(x,y,n,sp)=>{ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, s=(.5+Math.random())*sp;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-.3,r:4+Math.random()*7,life:1,col:COLORS[Math.random()*COLORS.length|0]}); }
+    if(!running){ running=true; requestAnimationFrame(frame); } };
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    parts=parts.filter(p=>p.life>.03).slice(-160);
+    for(const p of parts){
+      p.x+=p.vx; p.y+=p.vy; p.vx*=.95; p.vy=p.vy*.95-.01; p.r+=.25; p.life*=.95;
+      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+      g.addColorStop(0,`rgba(${p.col},${(p.life*.55).toFixed(3)})`); g.addColorStop(1,`rgba(${p.col},0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill();
+    }
+    if(parts.length) requestAnimationFrame(frame); else { running=false; ctx.clearRect(0,0,W,H); }
+  }
+  addEventListener("touchstart",e=>{ const t=e.touches[0]; if(t){ spawn(t.clientX,t.clientY,12,2.6); last={x:t.clientX,y:t.clientY,t:performance.now()}; } },{passive:true});
+  addEventListener("touchmove",e=>{ const t=e.touches[0]; if(!t) return; const now=performance.now();
+    if(Math.hypot(t.clientX-last.x,t.clientY-last.y)>18||now-last.t>60){ spawn(t.clientX,t.clientY,2,1.2); last={x:t.clientX,y:t.clientY,t:now}; } },{passive:true});
+}
+function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); initSvcSwipe(); initMotion(); initTouchAbir(); refreshLive();
   if(hasGSAP()) setTimeout(()=>ScrollTrigger.refresh(),400);
 }
 async function refreshLive(){
