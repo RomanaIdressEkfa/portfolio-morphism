@@ -81,7 +81,13 @@ const EXTRA_PROJECTS=[
    tech:["Laravel","PHP","MySQL","Chrome Extension","n8n"],image_url:"/shots/ubsl-marketing.jpg",live_url:"https://marketing.ubsbd.com.bd/"},
   {title:"FreshCart",category:"E-commerce",featured:true,sort_order:1.3,
    description:"Grocery e-commerce storefront with promo banners, category browsing and product listings, built for fast everyday shopping.",
-   tech:["HTML5","Bootstrap","JavaScript"],image_url:"/shots/freshcart.jpg",live_url:"https://freshcart.codescandy.com/pages/index-2.html"}
+   tech:["HTML5","Bootstrap","JavaScript"],image_url:"/shots/freshcart.jpg",live_url:"https://freshcart.codescandy.com/pages/index-2.html"},
+  {title:"DebtRunway",category:"Islamic Finance",featured:true,sort_order:1.4,
+   description:"Free Islamic-finance calculators with fixed, checkable answers — zakat due against the live gold/silver nisab, how an estate divides — each figure shown with the rule behind it. English & Bangla, light/dark.",
+   tech:["Next.js","React","Tailwind CSS"],image_url:"/shots/debtrunway.jpg",live_url:"https://debtrunway.com/"},
+  {title:"BanglaFounder",category:"Community Platform",featured:true,sort_order:1.5,
+   description:"Bangla platform showcasing Bangladeshi entrepreneurs — verified founder profiles, their stories and local products, with founder meetups and a blog.",
+   tech:["Laravel","PHP","MySQL","Tailwind"],image_url:"/shots/banglafounder.jpg",live_url:"https://banglafounder.com/"}
 ];
 function sortedProjects(){
   const titles=new Set(PROJECTS.map(p=>p.title));
