@@ -74,11 +74,21 @@ function sortedProjects(){
 /* work slider: a fanned, auto-advancing stack of project screenshots (glass frame, no text by
    default). Click the active centre picture to reveal its details with no card background;
    click a side picture (or the arrows) to bring it to centre. Auto-advance pauses on hover/open. */
+// some projects' Supabase image_url points at a live thum.io screenshot of a Cloudflare-protected
+// site, which renders the "checking your browser" interstitial instead of the real page — pin a
+// real static shot locally instead (same pattern as the review photo/CV overrides)
+const PROJECT_IMAGE_OVERRIDES={
+  "Bespoke Hotteok":"/shots/bespoke-hotteok.jpg"
+};
+// the stored live_url for this one points at a stale deployment unrelated to the real site
+const PROJECT_LINK_OVERRIDES={
+  "Bespoke Hotteok":"https://chocolate-icecream.vercel.app/"
+};
 function renderWork(){
   const stack=el("workStack"); if(!stack) return;
   const list=sortedProjects(); if(!list.length) return;
   stack.innerHTML=list.map((p,i)=>{
-    const img=p.image_url || `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(p.live_url||"")}`;
+    const img=PROJECT_IMAGE_OVERRIDES[p.title] || p.image_url || `https://image.thum.io/get/width/900/noanimate/${encodeURIComponent(p.live_url||"")}`;
     return `<figure class="work-card" data-i="${i}"><img src="${esc(img)}" alt="${esc(p.title)}" decoding="async"/></figure>`;
   }).join("");
   initWorkSlider(list);
@@ -92,22 +102,26 @@ function initWorkSlider(list){
   function renderDetail(){
     const p=list[active];
     const techs=(p.tech||[]).slice(0,5).map(t=>`<span>${esc(t)}</span>`).join("");
-    const link=p.live_url?`<a class="btn btn-blue" href="${esc(p.live_url)}" target="_blank" rel="noopener">View project ${ICON.arrow}</a>`:"";
+    const liveUrl=PROJECT_LINK_OVERRIDES[p.title] || p.live_url;
+    const link=liveUrl?`<a class="btn btn-blue" href="${esc(liveUrl)}" target="_blank" rel="noopener">View project ${ICON.arrow}</a>`:"";
     detail.innerHTML=`<h3>${esc(p.title)}</h3><p>${esc(p.description||"")}</p><div class="techs">${techs}</div>${link}`;
     if(GS) gsap.fromTo(detail.children,{opacity:0,y:14},{opacity:1,y:0,duration:.45,stagger:.06,ease:"power3.out"});
   }
   function layout(first){
+    // pure rotation-driven curve: same card size throughout, perspective (set on .work-slider)
+    // does the foreshortening as each card rotates further away from center — no manual scale/dip
+    const STEP=13, SPACING=132;
     cards.forEach((c,i)=>{
       let off=i-active; if(off>N/2) off-=N; if(off<-N/2) off+=N;
       const a=Math.abs(off);
-      const x=off*195, scale=Math.max(1-a*0.15,0.46), rot=off*-12, y=a*10, z=100-a;
-      const vis=a<=3;
+      const x=off*SPACING, rot=-off*STEP, z=100-a;
+      const vis=a<=4;
       const isActive=off===0;
       c.style.zIndex=z; c.style.pointerEvents=vis?"auto":"none";
       c.classList.toggle("is-active",isActive);
-      const vars={xPercent:-50,x,y,scale,rotateY:rot,opacity:vis?(1-a*0.26):0,
+      const vars={xPercent:-50,x,y:0,scale:1,rotateY:rot,opacity:vis?Math.max(1-a*0.1,.6):0,
         rotateX:isActive?tiltX:0,ease:"elastic.out(1,0.65)",duration:first?0:0.85,overwrite:"auto"};
-      if(GS) gsap.to(c,vars); else c.style.transform=`translateX(-50%) translate(${x}px,${y}px) scale(${scale}) rotateY(${rot}deg)`,c.style.opacity=vars.opacity;
+      if(GS) gsap.to(c,vars); else c.style.transform=`translateX(-50%) translate(${x}px,0) rotateY(${rot}deg)`,c.style.opacity=vars.opacity;
     });
   }
   function goTo(i){ active=((i%N)+N)%N; layout(); if(open) renderDetail(); }
@@ -197,7 +211,7 @@ const REVIEW_METRICS={
   "Abdullah Al Zubair":"Most Reliable Engineer I've Managed",
   "Laeeq MD Zobayer Hossain":"Zero-Touch Social Media Automation"
 };
-const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib", "MD Alifuzzaman Alif"];
+const REVIEW_EXCLUSIONS = ["Rashed Khan", "Nusrat Jahan", "Mahir Rahman", "Shihab Uddin", "Sumaiya Habib"];
 // real photo + corrected name/role for a client, immune to stale Supabase data (same pattern as the CV/Resume pin)
 const REVIEW_OVERRIDES={
   "Tariqul Islam":{name:"Hamza Bin Hakim",role:"CEO",avatar:"/shots/hamza-bin-hakim.jpg",
@@ -209,25 +223,25 @@ const EXTRA_TESTIMONIALS=[{
   role: "Merchandiser",
   company: "Al Muslim Group",
   message: "Ekfa built a custom Apparel Tracking Software that transformed our order management. The system is intuitive, reliable, and significantly improved transparency with our international buyers.",
-  avatar_url: "/shots/alif.jpeg"
+  avatar_url: "/shots/alif.jpg"
 },{
   name: "Mustafizur Rahman Khan",
   role: "Owner",
   company: "Sylhet BD, Banglafounder Academy & Surma Tech Zone",
-  message: "Ekfa is the technical powerhouse behind all our web platforms. Her ability to handle multiple complex projects with such high standards is rare. A top-tier engineer I highly recommend.",
-  avatar_url: "/shots/mustafiz-rahman.png"
+  message: "Ekfa is the technical powerhouse behind all our platforms — handling complex projects with rare consistency. A top-tier engineer, highly recommended.",
+  avatar_url: "/shots/mustafiz-rahman.jpg"
 },{
   name: "Md Mahbubur Rahman",
   role: "Owner",
   company: "Cyber Home",
   message: "Ekfa has been a cornerstone of our team for over 4 years. Her technical depth in Laravel and proactive problem-solving have been vital to our USA operations. A truly dedicated professional.",
-  avatar_url: "/shots/mahbubur-rahman.png"
+  avatar_url: "/shots/mahbubur-rahman.jpg"
 },{
   name: "Dr. Tania Tofail",
   role: "Consultant (Endocrinology)",
   company: "Bangladesh Medical College Hospital & Ibn Sina",
   message: "Ekfa developed the Endo2BMU Hospital Management Software for us, and the results have been exceptional. The system is streamlined, efficient, and has greatly improved our clinical workflows. Her technical expertise and professional approach are top-notch.",
-  avatar_url: "/shots/dr-tania-tofail.png"
+  avatar_url: "/shots/dr-tania-tofail.jpg"
 },{
   name:"Abdullah Al Zubair",
   role:"Operational Head",
