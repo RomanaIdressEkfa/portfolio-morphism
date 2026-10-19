@@ -68,8 +68,12 @@ function renderMarquee(){
   const one = items.map(t=>`<span>${esc(t)}</span>`).join("");
   el("marquee").innerHTML = one+one;
 }
+// hidden until a real screenshot is available (its image_url is a thum.io shot of a
+// Cloudflare-protected page that only ever renders the "checking your browser" interstitial)
+const PROJECT_EXCLUSIONS=["Logically Debate v2"];
 function sortedProjects(){
-  return [...PROJECTS].sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)||(a.sort_order||0)-(b.sort_order||0));
+  return [...PROJECTS].filter(p=>!PROJECT_EXCLUSIONS.includes(p.title))
+    .sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)||(a.sort_order||0)-(b.sort_order||0));
 }
 /* work slider: a fanned, auto-advancing stack of project screenshots (glass frame, no text by
    default). Click the active centre picture to reveal its details with no card background;
@@ -78,7 +82,8 @@ function sortedProjects(){
 // site, which renders the "checking your browser" interstitial instead of the real page — pin a
 // real static shot locally instead (same pattern as the review photo/CV overrides)
 const PROJECT_IMAGE_OVERRIDES={
-  "Bespoke Hotteok":"/shots/bespoke-hotteok.jpg"
+  "Bespoke Hotteok":"/shots/bespoke-hotteok.jpg",
+  "Logically Debate":"/shots/logically-debate.jpg"
 };
 // the stored live_url for this one points at a stale deployment unrelated to the real site
 const PROJECT_LINK_OVERRIDES={
@@ -97,8 +102,29 @@ function initWorkSlider(list){
   const stack=el("workStack"), detail=el("workDetail"), slider=el("workSlider");
   const cards=[...stack.querySelectorAll(".work-card")];
   const N=list.length, GS=hasGSAP();
-  let active=0, open=false, timer=null, tiltX=0, tiltY=0, raf=0;
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // inner-cylinder wall (curved monitor): cards sit on an arc around the viewer, centre card flat
+  // and farthest, side cards turned inward and closer — so their top/bottom edges curve outward
+  const st={pos:0}; let active=0, open=false, timer=null, tween=null, W=260, GAP=18, R=1100, STEP=.25;
+  const wrap=v=>{ v%=N; if(v>=N/2) v-=N; if(v<-N/2) v+=N; return v; };
 
+  function measure(){
+    W=cards[0].offsetWidth||230; GAP=Math.round(W*.07); R=W*3.3; STEP=(W+GAP)/R;
+    stack.style.perspective=Math.round(W*7)+"px";
+  }
+  function render(){
+    const near=((Math.round(st.pos)%N)+N)%N;
+    cards.forEach((c,i)=>{
+      const off=wrap(i-st.pos), a=off*STEP, d=Math.abs(off);
+      const op=d<=2.6?1:Math.max(0,1-(d-2.6)/.8);
+      c.style.transform=`translate(-50%,-50%) translate3d(${(Math.sin(a)*R).toFixed(1)}px,0,${(R*(1-Math.cos(a))).toFixed(1)}px) rotateY(${(-a*180/Math.PI).toFixed(2)}deg)`;
+      c.style.opacity=op.toFixed(3);
+      c.style.visibility=op>0?"visible":"hidden";
+      c.style.pointerEvents=op>.5?"auto":"none";
+      c.classList.toggle("is-active",i===near);
+    });
+    if(near!==active){ active=near; if(open) renderDetail(); }
+  }
   function renderDetail(){
     const p=list[active];
     const techs=(p.tech||[]).slice(0,5).map(t=>`<span>${esc(t)}</span>`).join("");
@@ -107,63 +133,168 @@ function initWorkSlider(list){
     detail.innerHTML=`<h3>${esc(p.title)}</h3><p>${esc(p.description||"")}</p><div class="techs">${techs}</div>${link}`;
     if(GS) gsap.fromTo(detail.children,{opacity:0,y:14},{opacity:1,y:0,duration:.45,stagger:.06,ease:"power3.out"});
   }
-  function layout(first){
-    // pure rotation-driven curve: same card size throughout, perspective (set on .work-slider)
-    // does the foreshortening as each card rotates further away from center — no manual scale/dip
-    const STEP=13, SPACING=132;
-    cards.forEach((c,i)=>{
-      let off=i-active; if(off>N/2) off-=N; if(off<-N/2) off+=N;
-      const a=Math.abs(off);
-      const x=off*SPACING, rot=-off*STEP, z=100-a;
-      const vis=a<=4;
-      const isActive=off===0;
-      c.style.zIndex=z; c.style.pointerEvents=vis?"auto":"none";
-      c.classList.toggle("is-active",isActive);
-      const vars={xPercent:-50,x,y:0,scale:1,rotateY:rot,opacity:vis?Math.max(1-a*0.1,.6):0,
-        rotateX:isActive?tiltX:0,ease:"elastic.out(1,0.65)",duration:first?0:0.85,overwrite:"auto"};
-      if(GS) gsap.to(c,vars); else c.style.transform=`translateX(-50%) translate(${x}px,0) rotateY(${rot}deg)`,c.style.opacity=vars.opacity;
-    });
+  function animateTo(target){
+    if(tween) tween.kill();
+    if(!GS||reduce){ st.pos=target; render(); return; }
+    tween=gsap.to(st,{pos:target,duration:.9,ease:"power3.out",onUpdate:render});
   }
-  function goTo(i){ active=((i%N)+N)%N; layout(); if(open) renderDetail(); }
-  function next(){ goTo(active+1); }
-  function prev(){ goTo(active-1); }
+  function goTo(i){ animateTo(st.pos+wrap(i-st.pos)); }
+  function next(){ animateTo(Math.round(st.pos)+1); }
+  function prev(){ animateTo(Math.round(st.pos)-1); }
   function toggleDetail(show){
     open=show; detail.classList.toggle("open",open);
     if(open){ renderDetail(); stop(); } else start();
   }
-  function start(){ stop(); timer=setInterval(next,4200); }
+  function start(){ stop(); if(!reduce) timer=setInterval(next,4200); }
   function stop(){ clearInterval(timer); timer=null; }
 
-  cards.forEach(c=>c.addEventListener("click",()=>{
-    const i=+c.dataset.i;
-    if(i===active) toggleDetail(!open); else { goTo(i); if(open) renderDetail(); }
-  }));
+  /* drag / swipe: the arc follows the pointer, then snaps to the nearest card */
+  let drag=null, dragged=false;
+  stack.addEventListener("pointerdown",e=>{
+    if(e.button!==0) return;
+    drag={x:e.clientX,pos:st.pos,lastX:e.clientX,lastT:performance.now(),v:0}; dragged=false;
+    if(tween) tween.kill(); stop();
+  });
+  addEventListener("pointermove",e=>{
+    if(!drag) return;
+    const dx=e.clientX-drag.x;
+    if(!dragged&&Math.abs(dx)<6) return;
+    dragged=true;
+    const now=performance.now(); drag.v=(e.clientX-drag.lastX)/Math.max(1,now-drag.lastT); drag.lastX=e.clientX; drag.lastT=now;
+    st.pos=drag.pos-dx/(W+GAP); render();
+  });
+  addEventListener("pointerup",()=>{
+    if(!drag) return;
+    if(dragged) animateTo(Math.round(st.pos-drag.v*180/(W+GAP)));
+    drag=null; if(!open&&!slider.matches(":hover")) start();
+  });
+
+  cards.forEach(c=>{
+    const img=c.querySelector("img"); if(img) img.draggable=false;
+    c.addEventListener("click",()=>{
+      if(dragged){ dragged=false; return; }
+      const i=+c.dataset.i;
+      if(i===active) toggleDetail(!open); else goTo(i);
+    });
+  });
   el("workPrev").addEventListener("click",()=>{ if(open) toggleDetail(false); prev(); });
   el("workNext").addEventListener("click",()=>{ if(open) toggleDetail(false); next(); });
   slider.addEventListener("mouseenter",stop);
-  slider.addEventListener("mouseleave",()=>{ if(!open) start(); });
+  slider.addEventListener("mouseleave",()=>{ if(!open&&!drag) start(); });
 
-  /* mouse-reactive 3D tilt + glass sheen on the active card */
-  if(GS&&matchMedia("(hover: hover) and (pointer: fine)").matches&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+  if(GS&&matchMedia("(hover: hover) and (pointer: fine)").matches&&!reduce){
+    let raf=0;
     stack.addEventListener("pointermove",e=>{
-      const a=stack.querySelector(".work-card.is-active"); if(!a) return;
-      const r=a.getBoundingClientRect(), px=(e.clientX-r.left)/r.width-.5, py=(e.clientY-r.top)/r.height-.5;
-      tiltX=-py*14;
-      if(raf) return; raf=requestAnimationFrame(()=>{ raf=0;
-        gsap.to(a,{rotateX:tiltX,rotateY:px*14,duration:.5,ease:"power3.out",overwrite:"auto"});
-        a.style.setProperty("--mx",((px+.5)*100)+"%"); a.style.setProperty("--my",((py+.5)*100)+"%");
+      const a=stack.querySelector(".work-card.is-active"); if(!a||raf) return;
+      raf=requestAnimationFrame(()=>{ raf=0;
+        const r=a.getBoundingClientRect();
+        a.style.setProperty("--mx",((e.clientX-r.left)/r.width*100)+"%"); a.style.setProperty("--my",((e.clientY-r.top)/r.height*100)+"%");
       });
     });
-    stack.addEventListener("pointerleave",()=>{ tiltX=0; const a=stack.querySelector(".work-card.is-active");
-      if(a) gsap.to(a,{rotateX:0,rotateY:0,duration:.6,ease:"elastic.out(1,0.6)"}); });
   }
 
-  layout(true); start();
-  if(GS) ScrollTrigger.create({trigger:slider,start:"top 80%",once:true,
-    onEnter:()=>{
-      const to=cards.map(c=>({opacity:gsap.getProperty(c,"opacity"),y:gsap.getProperty(c,"y"),scale:gsap.getProperty(c,"scale")}));
-      gsap.fromTo(cards,{opacity:0,y:60,scale:.7},{opacity:(i)=>to[i].opacity,y:(i)=>to[i].y,scale:(i)=>to[i].scale,duration:.9,stagger:.06,ease:"back.out(1.5)"});
+  let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ measure(); render(); },150); });
+  measure(); render(); start();
+}
+
+/* toolkit wheel: tech-stack cards on the rim of a partly hidden dial. The ring closes exactly
+   (360/N per card), so cards, ticks and group labels stay aligned through every wrap. */
+const TW_GROUPS={"Backend":["#FF6A52","#E6281B"],"Data":["#5F9AC2","#2F5A7A"],"ERP & Automation":["#4DAEFF","#0066CC"],"Frontend":["#A78BFA","#6D28D9"],"DevOps":["#34D399","#047857"]};
+const TW_TOOLS=[
+  ["Laravel","Backend","MVC apps & REST APIs","laravel"],["PHP","Backend","Core language, 8.x","php"],["Composer","Backend","Package management","composer"],
+  ["MySQL","Data","Schemas & query tuning","mysql"],["PostgreSQL","Data","Relational data at scale","postgresql"],
+  ["ERPNext","ERP & Automation","Frappe customisation","erpnext"],["n8n","ERP & Automation","Workflow automation","n8n"],
+  ["JavaScript","Frontend","Interactive UIs","javascript"],["React","Frontend","Component-driven UIs","react"],["Next.js","Frontend","Full-stack React","nextdotjs"],
+  ["Tailwind CSS","Frontend","Utility-first styling","tailwindcss"],["Bootstrap","Frontend","Rapid responsive layouts","bootstrap"],["HTML5","Frontend","Semantic markup","html5"],["CSS3","Frontend","Modern styling","css3"],
+  ["Docker","DevOps","Containerised deploys","docker"],["Git","DevOps","Version control","git"],["GitHub","DevOps","Collaboration & CI","github"],["GitLab","DevOps","Pipelines & repos","gitlab"]
+];
+function initToolWheel(){
+  const stage=el("twStage"), wrapEl=el("twCards"), dial=el("twDial"), readout=el("twReadout");
+  if(!stage) return;
+  const N=TW_TOOLS.length, STEP=360/N, GS=hasGSAP(), reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el("twCount").textContent=N;
+  wrapEl.innerHTML=TW_TOOLS.map(([n,g,d,l],i)=>{
+    const [c1,c2]=TW_GROUPS[g];
+    return `<button class="tw-card" type="button" data-i="${i}" style="--c1:${c1};--c2:${c2}" aria-label="${esc(n)} — ${esc(g)}">
+      <span class="tw-ic"><img src="/logos/${l}.svg" alt="" draggable="false"/></span>
+      <strong>${esc(n)}</strong><small>${esc(d)}</small><em>${esc(g)}</em></button>`;
+  }).join("");
+  // one label per group, centred on that group's cards
+  const groups={}; TW_TOOLS.forEach(([,g],i)=>(groups[g]=groups[g]||[]).push(i));
+  dial.innerHTML=Object.entries(groups).map(([g,ix])=>
+    `<span class="tw-label" style="--a:${((ix[0]+ix[ix.length-1])/2*STEP).toFixed(2)}deg;--c2:${TW_GROUPS[g][1]}">${esc(g)}</span>`).join("");
+  const cards=[...wrapEl.children];
+  const st={pos:0}; let scrollOff=0, active=-1, tween=null, R=520, cy=680;
+
+  const norm=a=>{ a%=360; if(a>180) a-=360; if(a<-180) a+=360; return a; };
+  function measure(){
+    const cw=cards[0].offsetWidth, ch=cards[0].offsetHeight, gap=cw*.2;
+    R=Math.max((cw+gap)/(2*Math.sin(Math.PI/N)), 260);
+    cy=R+ch/2+70;
+    const dR=R-ch/2-34;
+    stage.style.setProperty("--cy",cy+"px"); stage.style.setProperty("--dr",dR+"px");
+    stage.style.height=Math.round(cy-dR*.42)+"px";
+  }
+  function render(){
+    const total=st.pos+scrollOff, near=((Math.round(total)%N)+N)%N;
+    dial.style.transform=`translate(-50%,-50%) rotate(${(-total*STEP).toFixed(2)}deg)`;
+    cards.forEach((c,i)=>{
+      const a=norm((i-total)*STEP), d=Math.abs(a)/STEP, k=Math.max(0,1-d);
+      const op=d<=3.4?1:Math.max(0,1-(d-3.4)/1);
+      c.style.transform=`translate(-50%,-50%) rotate(${a.toFixed(2)}deg) translateY(${(-R-28*k).toFixed(1)}px) scale(${(1+.14*k).toFixed(3)})`;
+      c.style.opacity=op.toFixed(3); c.style.visibility=op>0?"visible":"hidden";
+      c.style.zIndex=100-Math.round(d*10);
+      c.tabIndex=i===near?0:-1;
+      c.classList.toggle("is-active",i===near);
+    });
+    if(near!==active){
+      active=near; const [n,g]=TW_TOOLS[near];
+      readout.innerHTML=`<b>${String(near+1).padStart(2,"0")}</b> / ${String(N).padStart(2,"0")}<span>${esc(n)} · ${esc(g)}</span>`;
+    }
+  }
+  function animateTo(target){
+    if(tween) tween.kill();
+    if(!GS||reduce){ st.pos=target; render(); return; }
+    tween=gsap.to(st,{pos:target,duration:.8,ease:"power3.out",onUpdate:render});
+  }
+  const wrapN=v=>{ v%=N; if(v>N/2) v-=N; if(v<-N/2) v+=N; return v; };
+  const total=()=>st.pos+scrollOff;
+  function goTo(i){ animateTo(st.pos+wrapN(i-total())); }
+  const snap=()=>animateTo(st.pos+Math.round(total())-total());
+
+  /* drag: arc length of one card step maps to one card */
+  let drag=null, dragged=false;
+  stage.addEventListener("pointerdown",e=>{
+    if(e.button!==0) return;
+    drag={x:e.clientX,pos:st.pos,lx:e.clientX,lt:performance.now(),v:0}; dragged=false; if(tween) tween.kill();
+  });
+  addEventListener("pointermove",e=>{
+    if(!drag) return;
+    const dx=e.clientX-drag.x; if(!dragged&&Math.abs(dx)<6) return; dragged=true;
+    const t=performance.now(); drag.v=(e.clientX-drag.lx)/Math.max(1,t-drag.lt); drag.lx=e.clientX; drag.lt=t;
+    st.pos=drag.pos-dx/(R*STEP*Math.PI/180); render();
+  });
+  addEventListener("pointerup",()=>{
+    if(!drag) return;
+    if(dragged){ const arc=R*STEP*Math.PI/180; animateTo(st.pos+Math.round(total()-drag.v*160/arc)-total()); }
+    drag=null;
+  });
+  cards.forEach(c=>c.addEventListener("click",()=>{ if(dragged){ dragged=false; return; } goTo(+c.dataset.i); }));
+  stage.addEventListener("keydown",e=>{
+    if(e.key==="ArrowRight"){ e.preventDefault(); goTo(active+1); }
+    else if(e.key==="ArrowLeft"){ e.preventDefault(); goTo(active-1); }
+  });
+
+  /* scrolling past the section turns the wheel a few cards; it settles on a card when scrolling stops */
+  if(GS&&!reduce){
+    let idle;
+    ScrollTrigger.create({trigger:stage,start:"top bottom",end:"bottom top",onUpdate:s=>{
+      scrollOff=s.progress*5-2.5; render();
+      clearTimeout(idle); idle=setTimeout(()=>{ if(!drag) snap(); },180);
     }});
+  }
+  let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ measure(); render(); },150); });
+  measure(); render();
 }
 
 const XP_COLORS=[["#FF6A52","#E6281B"],["#4DAEFF","#0066CC"],["#34D399","#047857"],["#FF7A96","#C72A50"],["#A78BFA","#6D28D9"],["#5F9AC2","#2F5A7A"]];
@@ -708,7 +839,7 @@ function initAbirCursor(){
     requestAnimationFrame(frame);
   })();
 }
-function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); refreshLive();
+function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); initToolWheel(); refreshLive();
   if(hasGSAP()) setTimeout(()=>ScrollTrigger.refresh(),400);
 }
 async function refreshLive(){
