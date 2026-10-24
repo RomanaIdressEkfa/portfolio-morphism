@@ -1871,3 +1871,9 @@ main > section.story{overflow:clip;padding-top:64px!important;padding-bottom:48p
   *,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
   .story-copy,.fq-side{background:rgba(246,249,253,.96)!important}
 }
+/* phones: the hero reserves a full screen of height, so the web-font swap (fallback font wraps
+   onto more lines) can't change its size and push the page around while loading */
+@media (max-width:760px){
+  .hero{min-height:100vh!important;min-height:100svh!important;display:flex;align-items:center}
+  .hero > .wrap{width:100%}
+}

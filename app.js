@@ -831,6 +831,24 @@ function initPreloader(onDone){
   pl.addEventListener("pointerdown",e=>{ if(!e.target.closest(".pl-skip")) splash(e.clientX,e.clientY,.7); });
 
   const target="PORTFOLIO";
+  if(CALM){
+    /* phones: a calm intro — PORTFOLIO fades in and lights up, then the screen fades away.
+       No drops, splashes, spins or elastic bounces (they read as jumpy on small screens). */
+    slots.forEach((s,k)=>{ if(k===4){ s.innerHTML=""; s.classList.remove("pl-bslot"); } s.textContent=target[k]; s.dataset.ch=target[k]; s.classList.remove("is-empty"); });
+    gsap.set(slots,{opacity:1});
+    const bloom=pl.querySelector(".pl-bloom");
+    const tl=gsap.timeline({onComplete:finish})
+      .fromTo(word,{autoAlpha:0,scale:.96},{autoAlpha:1,scale:1,duration:.6,ease:"power2.out"},.1)
+      .add(()=>word.classList.add("lit"),.45)
+      .fromTo(bloom,{opacity:0},{opacity:1,duration:.6,ease:"power2.out"},.45)
+      // hold until the web fonts are in (max 2.5s more), so the font swap re-wraps the hero
+      // behind this screen instead of visibly jumping after it lifts
+      .add(()=>{ if(document.fonts&&document.fonts.status!=="loaded"){ tl.pause();
+        Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]).then(()=>tl.resume()); } },1.6)
+      .to(pl,{autoAlpha:0,duration:.5,ease:"power2.inOut"},1.7);
+    pl.querySelector(".pl-skip").addEventListener("click",()=>tl.progress(1));
+    return;
+  }
   const morph=k=>{ const s=slots[k], ch=target[k];
     return gsap.timeline().to(s,{rotationX:90,duration:.07,ease:"power1.in"})
       .add(()=>{ if(k===4){ s.innerHTML=""; s.classList.remove("pl-bslot"); } s.textContent=ch; s.dataset.ch=ch; s.classList.remove("is-empty"); gsap.set(s,{opacity:1}); })
