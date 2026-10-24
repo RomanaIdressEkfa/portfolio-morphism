@@ -5,6 +5,7 @@ const WHATSAPP = "8801714893870";
 const EMAIL = "romanaidressekfa@gmail.com";
 /* phones & touch screens: calm mode — one simple fade-up per block, no decorative loops */
 const CALM = matchMedia("(max-width:760px), (pointer:coarse)").matches;
+function onWidthResize(fn,delay=150){ let w=innerWidth, t; addEventListener("resize",()=>{ if(innerWidth===w) return; w=innerWidth; clearTimeout(t); t=setTimeout(fn,delay); }); }
 // overrides whatever resume_url the Supabase profile table returns — update here, not in the DB
 const RESUME_URL = "https://drive.google.com/file/d/1fO8Qq3UGzx6oFQHZixV0Rl5HL1GRnLyj/view?usp=sharing";
 const CV_URL = "https://drive.google.com/file/d/13U8SuxUADaQ-f-EXH9x0CpoUA5GGKiZ9/view?usp=drive_link";
@@ -221,7 +222,7 @@ function initWorkSlider(list){
     });
   }
 
-  let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ measure(); render(); },150); });
+  onWidthResize(()=>{ measure(); render(); });
   measure(); render(); start();
 }
 
@@ -360,7 +361,7 @@ function bindPortfolioWheel(){
       st.pos+=Math.min(dt,50)/1000*.28; PF.render();
     });
   }
-  let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ PF.measure(); PF.render(); },150); });
+  onWidthResize(()=>{ PF.measure(); PF.render(); });
 }
 
 const XP_COLORS=[["#FF6A52","#E6281B"],["#4DAEFF","#0066CC"],["#34D399","#047857"],["#FF7A96","#C72A50"],["#A78BFA","#6D28D9"],["#5F9AC2","#2F5A7A"]];
@@ -521,7 +522,7 @@ function gsapReveal(n){
   const from=CALM?{y:24,opacity:0}:n.matches(L)?{x:-90,opacity:0,rotate:-1.5}:n.matches(R)?{x:90,opacity:0,rotate:1.5}
     :n.matches(".sec-head")?{y:60,opacity:0,scale:.94}:{y:60,opacity:0};
   gsap.fromTo(n,from,{x:0,y:0,rotate:0,scale:1,opacity:1,duration:CALM?.6:1,ease:"power3.out",overwrite:"auto",clearProps:"transform",
-    scrollTrigger:{trigger:n,start:"top 90%",onEnter:()=>countAll(n)}});
+    scrollTrigger:{trigger:n,start:"top 90%",once:true,onEnter:()=>countAll(n)}});
   const ph=n.querySelector?.(".ph");
   if(ph) gsap.fromTo(ph,{scale:1.14},{scale:1,duration:1.1,ease:"power3.out",scrollTrigger:{trigger:n,start:"top 88%"}});
 }
@@ -579,7 +580,7 @@ function initStory(){
   });
   // gentle background scale/brighten as the section passes (no pin)
   const bg=document.querySelector(".story-bg");
-  if(bg) gsap.fromTo(bg,{scale:.9,opacity:.55},{scale:1.1,opacity:1,ease:"none",
+  if(bg&&!CALM) gsap.fromTo(bg,{scale:.9,opacity:.55},{scale:1.1,opacity:1,ease:"none",
     scrollTrigger:{trigger:".story",start:"top bottom",end:"bottom top",scrub:true,invalidateOnRefresh:true}});
   window.addEventListener("load",()=>ScrollTrigger.refresh());
   [700,1500,3000].forEach(t=>setTimeout(()=>ScrollTrigger.refresh(),t));
@@ -599,7 +600,7 @@ function initFaq(){
       items.forEach(o=>set(o,o===item&&open));
     });
   });
-  addEventListener("resize",()=>items.forEach(i=>{ if(i.classList.contains("open")) set(i,true); }));
+  onWidthResize(()=>items.forEach(i=>{ if(i.classList.contains("open")) set(i,true); }),0);
 }
 
 function initButtonFX(){
@@ -632,6 +633,7 @@ function initGsap(){
   // no GSAP → just reveal hero content with CSS
   if(!hasGSAP()){ document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("in")); return; }
   gsap.registerPlugin(ScrollTrigger);
+  ScrollTrigger.config({ignoreMobileResize:true});
   document.querySelectorAll(".hero .reveal").forEach(n=>n.classList.add("g-done","in"));
   // hero intro: built when the preloader hands off (hydrate re-renders the social pills first,
   // so the timeline must target the final nodes). Every element arrives from its own direction.
@@ -693,7 +695,7 @@ function initSvcSwipe(){
   };
   list.addEventListener("scroll",()=>{ if(!raf) raf=requestAnimationFrame(sync); },{passive:true});
   items.forEach((it,i)=>it.addEventListener("click",()=>{ if(mq.matches&&i!==cur) go(i); }));
-  addEventListener("resize",()=>{ cur=-1; sync(); });
+  onWidthResize(()=>{ cur=-1; sync(); },0);
   sync();
   /* first time the deck scrolls into view, peek at the next card so it reads as swipeable */
   if(!matchMedia("(prefers-reduced-motion: reduce)").matches) new IntersectionObserver((es,o)=>{
@@ -779,7 +781,7 @@ function initSvcTabs(){
   });
   select(0);
   container._svcSelect=select;
-  let resizeT; window.addEventListener("resize",()=>{ clearTimeout(resizeT); resizeT=setTimeout(layoutFlow,120); });
+  onWidthResize(layoutFlow,120);
   setTimeout(layoutFlow,900); // after the scroll-reveal settles, in case it nudged layout
 
   /* auto-advance one service every 4s while idle; pause on hover/focus, resume on leave */
@@ -903,10 +905,10 @@ function initParticlePortrait(){
   const W0=()=>disc.getBoundingClientRect().width;
   let lastE=-1, idleFrames=0;
   function build(){ lastE=-1; idleFrames=0;
-    const dpr=Math.min(devicePixelRatio||1,W0()<500?1.5:2); W=disc.getBoundingClientRect().width;
+    const dpr=Math.min(devicePixelRatio||1,CALM?1.25:2); W=disc.getBoundingClientRect().width;
     OFF=W*.06; const CW=W+2*OFF;                                            // canvas overhangs the disc on every side
     cv.width=Math.round(CW*dpr); cv.height=Math.round(CW*dpr); ctx.setTransform(dpr,0,0,dpr,OFF*dpr,OFF*dpr);
-    const gap=W<400?5.2:5.5, inner=W*.86;                                  // portrait lives inside the inner ring
+    const gap=CALM?5.8:(W<400?5.2:5.5), inner=W*.86;   // phones: ~20% fewer dots, same face                                  // portrait lives inside the inner ring
     const dw=inner*.98, ox=(W-dw)/2, oy=W*.12;                             // face centred, shoulders run to the rim
     const dh=dw*img.height/img.width, sw=Math.round(dw/gap), sh=Math.round(dh/gap);
     const s=document.createElement("canvas"); s.width=sw; s.height=sh;
@@ -927,7 +929,12 @@ function initParticlePortrait(){
      scroll offsets, so it stays right after resizes / rotation): 0 while its centre is near the bottom,
      1 across the middle band, back to 0 as it nears the top — the same both scroll directions */
   const ss=(a,b,x)=>{ const t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); };
-  const formed=()=>{ const r=wrap.getBoundingClientRect(), t=(innerHeight-(r.top+r.height/2))/innerHeight; return ss(.08,.38,t)*(1-ss(.68,.98,t)); };
+  // disc centre in page coordinates, cached (re-measured on resize / load / every 2s) so each frame
+  // only does maths on scrollY — reading layout every frame forced full style+layout passes
+  let cyDoc=0, vh=innerHeight;
+  const remeasure=()=>{ const r=wrap.getBoundingClientRect(); cyDoc=r.top+scrollY+r.height/2; vh=innerHeight; };
+  remeasure(); addEventListener("resize",remeasure,{passive:true}); addEventListener("load",remeasure); setInterval(remeasure,2000);
+  const formed=()=>{ const t=(vh-(cyDoc-scrollY))/vh; return ss(.08,.38,t)*(1-ss(.68,.98,t)); };
   function frame(now){
     if(!inView){ running=false; return; }
     scrollP=formed();
@@ -960,7 +967,7 @@ function initParticlePortrait(){
   img=new Image(); img.src="/shots/portrait-particles.png";
   img.decode().then(()=>{
     build(); kick();
-    let rt; addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(()=>{ build(); kick(); },150); });
+    onWidthResize(()=>{ build(); kick(); });   // rebuilding the dot image is heavy: width changes only
     new IntersectionObserver(es=>{ inView=es[0].isIntersecting; kick(); },{rootMargin:"200px"}).observe(section);
     if(reduce) return;
     addEventListener("pointermove",e=>{
@@ -1008,7 +1015,7 @@ function initAbirCursor(){
     const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,`rgba(${col},.5)`); g.addColorStop(1,`rgba(${col},0)`);
     x.fillStyle=g; x.fillRect(0,0,64,64); return s; });
   let W=0,H=0,parts=[],last={x:-9999,y:-9999,t:0},running=false;
-  function size(){ W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+  function size(){ const h=Math.max(H,innerHeight); if(innerWidth===W&&h===H) return; W=innerWidth; H=h; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
   size(); addEventListener("resize",size);
   function spawn(x,y){
     const n=2+Math.floor(Math.random()*2);
