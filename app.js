@@ -3,6 +3,8 @@ const SUPA_URL = "https://slfmenzgjbbegrpzfdql.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsZm1lbnpnamJiZWdycHpmZHFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NTk4NTQsImV4cCI6MjA5MzEzNTg1NH0.m53CnEKfyDdd2Iajma94S-2MqjjCuYWVfjy2UavFrbw";
 const WHATSAPP = "8801714893870";
 const EMAIL = "romanaidressekfa@gmail.com";
+/* phones & touch screens: calm mode — one simple fade-up per block, no decorative loops */
+const CALM = matchMedia("(max-width:760px), (pointer:coarse)").matches;
 // overrides whatever resume_url the Supabase profile table returns — update here, not in the DB
 const RESUME_URL = "https://drive.google.com/file/d/1fO8Qq3UGzx6oFQHZixV0Rl5HL1GRnLyj/view?usp=sharing";
 const CV_URL = "https://drive.google.com/file/d/13U8SuxUADaQ-f-EXH9x0CpoUA5GGKiZ9/view?usp=drive_link";
@@ -263,15 +265,19 @@ function bindPortfolioWheel(){
     const n=N(); if(!n) return;
     const t=total(), near=((Math.round(t)%n)+n)%n;
     dial.style.transform=`translate(-50%,-50%) rotate(${(-t*STEP).toFixed(2)}deg)`;
+    // only touch styles that actually changed (each write costs a style recalc), and leave
+    // cards that are hidden and staying hidden alone
+    const set=(c,k,v)=>{ if(c._s[k]!==v){ c._s[k]=v; if(k[0]==="-") c.style.setProperty(k,v); else c.style[k]=v; } };
     PF.cards.forEach((c,i)=>{
+      c._s=c._s||{};
       const off=wrapN(i-t), d=Math.abs(off), k=Math.max(0,1-d);  // k: 1 at centre, 0 one step out
       const op=d<=2.6?1:Math.max(0,1-(d-2.6)/.6);
-      c.style.transform=`translate(-50%,-50%) rotate(${(off*STEP).toFixed(2)}deg) translateY(${(-R-20*k).toFixed(1)}px) scale(${(1+.15*k).toFixed(3)})`;
-      c.style.opacity=op.toFixed(3); c.style.visibility=op>0?"visible":"hidden";
-      c.style.zIndex=200-Math.round(d*20);
-      c.style.setProperty("--dim",Math.min(.18,d*.07).toFixed(3));
-      c.tabIndex=i===near?0:-1;
-      c.classList.toggle("is-active",i===near);
+      if(op===0&&c._s.visibility==="hidden") return;
+      set(c,"transform",`translate(-50%,-50%) rotate(${(off*STEP).toFixed(2)}deg) translateY(${(-R-20*k).toFixed(1)}px) scale(${(1+.15*k).toFixed(3)})`);
+      set(c,"opacity",op.toFixed(2)); set(c,"visibility",op>0?"visible":"hidden");
+      set(c,"zIndex",String(200-Math.round(d*20)));
+      set(c,"--dim",Math.min(.18,d*.07).toFixed(2));
+      const on=i===near; if(c._on!==on){ c._on=on; c.tabIndex=on?0:-1; c.classList.toggle("is-active",on); }
     });
     if(near!==active||force){
       active=near;
@@ -332,11 +338,11 @@ function bindPortfolioWheel(){
   if(GS&&!reduce){
     let idle;
     let hover=false, inView=false, holdUntil=0;
-    ScrollTrigger.create({trigger:stage,start:"top bottom",end:"bottom top",onUpdate:s=>{
+    if(!CALM) ScrollTrigger.create({trigger:stage,start:"top bottom",end:"bottom top",onUpdate:s=>{
       scrollOff=s.progress*3-1.5; PF.render();
       clearTimeout(idle); idle=setTimeout(()=>{ if(!drag&&hover) snap(); },180);
     }});
-    ScrollTrigger.create({trigger:stage,start:"top 80%",once:true,onEnter:()=>{ st.pos-=4; PF.render(); animateTo(st.pos+4,1.8); }});
+    if(!CALM) ScrollTrigger.create({trigger:stage,start:"top 80%",once:true,onEnter:()=>{ st.pos-=4; PF.render(); animateTo(st.pos+4,1.8); }});
     /* auto-rotate: a slow continuous drift while the wheel is on screen; hovering pauses it on the
        nearest card, and any drag / click / key holds it for a few seconds */
     const hold=()=>{ holdUntil=performance.now()+3500; };
@@ -345,7 +351,11 @@ function bindPortfolioWheel(){
     stage.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse") hover=false; });
     ["pointerdown","keydown","wheel"].forEach(t=>stage.addEventListener(t,hold,{passive:true}));
     [el("pfPrev"),el("pfNext")].forEach(b=>b.addEventListener("click",hold));
-    gsap.ticker.add((time,dt)=>{
+    if(CALM) setInterval(()=>{
+      if(!inView||drag||(tween&&tween.isActive())||performance.now()<holdUntil||document.hidden) return;
+      animateTo(Math.round(total())-scrollOff+1,1.1);   // phones: one calm step at a time
+    },3500);
+    else gsap.ticker.add((time,dt)=>{
       if(!inView||hover||drag||(tween&&tween.isActive())||performance.now()<holdUntil||document.hidden) return;
       st.pos+=Math.min(dt,50)/1000*.28; PF.render();
     });
@@ -508,9 +518,9 @@ function gsapReveal(n){
   if(n.classList.contains("g-done")) return; n.classList.add("g-done");
   // each block enters from the side it sits on; centred blocks rise from below
   const L=".about > .reveal:first-child, .svc-interactive, .xp-interactive, .story-copy", R=".about-side, .rev-carousel";
-  const from=n.matches(L)?{x:-90,opacity:0,rotate:-1.5}:n.matches(R)?{x:90,opacity:0,rotate:1.5}
+  const from=CALM?{y:24,opacity:0}:n.matches(L)?{x:-90,opacity:0,rotate:-1.5}:n.matches(R)?{x:90,opacity:0,rotate:1.5}
     :n.matches(".sec-head")?{y:60,opacity:0,scale:.94}:{y:60,opacity:0};
-  gsap.fromTo(n,from,{x:0,y:0,rotate:0,scale:1,opacity:1,duration:1,ease:"power3.out",overwrite:"auto",clearProps:"transform",
+  gsap.fromTo(n,from,{x:0,y:0,rotate:0,scale:1,opacity:1,duration:CALM?.6:1,ease:"power3.out",overwrite:"auto",clearProps:"transform",
     scrollTrigger:{trigger:n,start:"top 90%",onEnter:()=>countAll(n)}});
   const ph=n.querySelector?.(".ph");
   if(ph) gsap.fromTo(ph,{scale:1.14},{scale:1,duration:1.1,ease:"power3.out",scrollTrigger:{trigger:n,start:"top 88%"}});
@@ -562,7 +572,8 @@ function initStory(){
       const p=self.progress;
       spans.forEach((s,i)=>{
         const wp=Math.min(1,Math.max(0,p*n-i));
-        s.style.color=wp>=1?"#10182B":`rgba(35,50,78,${(0.3+wp*0.7).toFixed(2)})`;
+        const col=wp>=1?"#10182B":`rgba(35,50,78,${(0.3+wp*0.7).toFixed(2)})`;
+        if(s._c!==col){ s._c=col; s.style.color=col; }
       });
     }
   });
@@ -613,7 +624,7 @@ function initButtonFX(){
 // host and tab are visible so WebGL resources are released otherwise.
 function initChrome(){
   const nav=el("nav"), navInner=el("navInner");
-  addEventListener("scroll",()=>nav.classList.toggle("scrolled",scrollY>30),{passive:true});
+  let sc=null; addEventListener("scroll",()=>{ const v=scrollY>30; if(v!==sc){ sc=v; nav.classList.toggle("scrolled",v); } },{passive:true});
   el("burger").addEventListener("click",()=>navInner.classList.toggle("open"));
   document.querySelectorAll(".nav-links a").forEach(a=>a.addEventListener("click",()=>navInner.classList.remove("open")));
 }
@@ -628,6 +639,10 @@ function initGsap(){
     const h1=document.querySelector(".hero h1");
     if(h1&&h1.firstChild&&h1.firstChild.nodeType===3){ const s=document.createElement("span"); s.className="hl"; s.textContent=h1.firstChild.textContent; h1.replaceChild(s,h1.firstChild); }
     const pills=[...document.querySelectorAll(".hero-socials .spill")];
+    if(CALM){   // phones: one gentle staggered fade-up for the hero
+      gsap.fromTo(["#heroId",h1,".hero .lead",...pills,".scrollrow"],{y:16,autoAlpha:0},{y:0,autoAlpha:1,duration:.55,stagger:.07,ease:"power2.out",clearProps:"all"});
+      return;
+    }
     const dirs=[{x:-140,rotate:-12},{y:-90,rotate:6},{y:90,rotate:-6},{x:140,rotate:12}];
     gsap.timeline({defaults:{ease:"power3.out"},onComplete:()=>gsap.set([h1,".hero h1 .hl",".hero h1 .grad","#heroId",".hero .lead",pills,".scrollrow"],{clearProps:"all"})})
       .fromTo("#heroId",{y:-70,scale:.7,autoAlpha:0},{y:0,scale:1,autoAlpha:1,duration:.8,ease:"back.out(1.7)"},.05)
@@ -867,11 +882,13 @@ function initParticlePortrait(){
   let pts=[], W=0, OFF=0, img=null, scrollP=hasGSAP()?0:1, inView=true, running=false; const t0=performance.now();
   const mouse={x:-9999,y:-9999};
   const touch=matchMedia("(hover: none), (pointer: coarse)").matches; let touching=false;
-  function build(){
-    const dpr=Math.min(devicePixelRatio||1,2); W=disc.getBoundingClientRect().width;
+  const W0=()=>disc.getBoundingClientRect().width;
+  let lastE=-1, idleFrames=0;
+  function build(){ lastE=-1; idleFrames=0;
+    const dpr=Math.min(devicePixelRatio||1,W0()<500?1.5:2); W=disc.getBoundingClientRect().width;
     OFF=W*.06; const CW=W+2*OFF;                                            // canvas overhangs the disc on every side
     cv.width=Math.round(CW*dpr); cv.height=Math.round(CW*dpr); ctx.setTransform(dpr,0,0,dpr,OFF*dpr,OFF*dpr);
-    const gap=W<400?4.5:5.5, inner=W*.86;                                  // portrait lives inside the inner ring
+    const gap=W<400?5.2:5.5, inner=W*.86;                                  // portrait lives inside the inner ring
     const dw=inner*.98, ox=(W-dw)/2, oy=W*.12;                             // face centred, shoulders run to the rim
     const dh=dw*img.height/img.width, sw=Math.round(dw/gap), sh=Math.round(dh/gap);
     const s=document.createElement("canvas"); s.width=sw; s.height=sh;
@@ -902,6 +919,11 @@ function initParticlePortrait(){
       const k=(t%5)/1.8;
       if(k<1){ mouse.x=W*(-.1+1.2*k); mouse.y=W*(.3+.4*Math.sin(k*Math.PI)); } else mouse.x=mouse.y=-9999;
     }
+    // fully formed, not scrolling, no finger/mouse near: the dots are at rest, so skip the redraw
+    const still=e<.001&&Math.abs(e-lastE)<.0005&&mouse.x<-9000;
+    lastE=e;
+    if(still&&++idleFrames>40){ requestAnimationFrame(frame); return; }
+    if(!still) idleFrames=0;
     ctx.clearRect(-OFF,-OFF,W+2*OFF,W+2*OFF);
     const paths=BUCKETS.map(()=>new Path2D());
     for(const p of pts){
@@ -933,7 +955,7 @@ function initParticlePortrait(){
     },{passive:true});
     section.addEventListener("pointerleave",()=>{ if(touch) return; mouse.x=mouse.y=-9999; disc.style.transform=""; chips.forEach(ch=>ch.style.translate=""); });
     /* tap / click: the dots burst away from the finger, then spring back into the face */
-    const burst=(x,y,power)=>{ for(const p of pts){ const dx=p.x-x, dy=p.y-y, d=Math.hypot(dx,dy)||1, f=power*Math.exp(-d/(W*.3)); p.vx+=dx/d*f; p.vy+=dy/d*f; } };
+    const burst=(x,y,power)=>{ idleFrames=0; for(const p of pts){ const dx=p.x-x, dy=p.y-y, d=Math.hypot(dx,dy)||1, f=power*Math.exp(-d/(W*.3)); p.vx+=dx/d*f; p.vy+=dy/d*f; } };
     disc.addEventListener("pointerdown",e=>{ const r=disc.getBoundingClientRect(); burst(e.clientX-r.left,e.clientY-r.top,touch?60:38); },{passive:true});
     if(!touch) return;
     /* touch: dragging a finger over the face (even mid-scroll) pushes the dots aside */
@@ -955,40 +977,47 @@ function initParticlePortrait(){
 }
 function initAbirCursor(){
   if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if(!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  // one effect for every device: mouse/pen trail via pointer events, finger trail + tap burst via
+  // touch events (decided per event, not once at load, so it also works after switching devices)
   const cv=document.createElement("canvas");
   cv.id="abirCv"; cv.setAttribute("aria-hidden","true");
   cv.style.cssText="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9500";
   document.body.appendChild(cv);
-  const ctx=cv.getContext("2d"), dpr=Math.min(devicePixelRatio||1,2);
+  const ctx=cv.getContext("2d"), dpr=Math.min(devicePixelRatio||1,1.5);
   const COLORS=["233,30,99","255,87,34","255,193,7","76,175,80","33,150,243","156,39,176","255,64,129","0,188,212"];
-  let W=0,H=0,parts=[],last={x:-9999,y:-9999,t:0};
+  // one soft-drop sprite per colour, drawn scaled + faded (no per-frame gradient objects)
+  const SPR=COLORS.map(col=>{ const s=document.createElement("canvas"); s.width=s.height=64; const x=s.getContext("2d");
+    const g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,`rgba(${col},.5)`); g.addColorStop(1,`rgba(${col},0)`);
+    x.fillStyle=g; x.fillRect(0,0,64,64); return s; });
+  let W=0,H=0,parts=[],last={x:-9999,y:-9999,t:0},running=false;
   function size(){ W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
   size(); addEventListener("resize",size);
   function spawn(x,y){
     const n=2+Math.floor(Math.random()*2);
     for(let i=0;i<n;i++){
       const col=COLORS[Math.floor(Math.random()*COLORS.length)], ang=Math.random()*Math.PI*2, spd=.4+Math.random()*1.7;
-      parts.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-.35,r:6+Math.random()*9,life:1,col});
+      parts.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-.35,r:6+Math.random()*9,life:1,s:SPR[COLORS.indexOf(col)]});
     }
+    if(!running){ running=true; requestAnimationFrame(frame); }
   }
-  addEventListener("pointermove",e=>{
-    const now=performance.now(), dist=Math.hypot(e.clientX-last.x,e.clientY-last.y);
-    if(dist>5||now-last.t>35){ spawn(e.clientX,e.clientY); last={x:e.clientX,y:e.clientY,t:now}; }
-  });
-  (function frame(){
+  const trail=(x,y)=>{
+    const now=performance.now(), dist=Math.hypot(x-last.x,y-last.y);
+    if(dist>5||now-last.t>35){ spawn(x,y); last={x,y,t:now}; }
+  };
+  addEventListener("pointermove",e=>{ if(e.pointerType!=="touch") trail(e.clientX,e.clientY); },{passive:true});
+  addEventListener("touchstart",e=>{ const t=e.touches[0]; if(!t) return; for(let i=0;i<5;i++) spawn(t.clientX,t.clientY); last={x:t.clientX,y:t.clientY,t:performance.now()}; },{passive:true});
+  addEventListener("touchmove",e=>{ const t=e.touches[0]; if(t) trail(t.clientX,t.clientY); },{passive:true});
+  function frame(){
     ctx.clearRect(0,0,W,H);
-    if(parts.length>260) parts=parts.slice(-260);
-    parts=parts.filter(p=>p.life>.02);
+    if(parts.length>180) parts=parts.slice(-180);
+    parts=parts.filter(p=>p.life>.03);
     for(const p of parts){
       p.x+=p.vx; p.y+=p.vy; p.vx*=.96; p.vy=p.vy*.96-.015; p.r+=.4; p.life*=.953;
-      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
-      g.addColorStop(0,`rgba(${p.col},${(p.life*.5).toFixed(3)})`);
-      g.addColorStop(1,`rgba(${p.col},0)`);
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill();
+      ctx.globalAlpha=p.life; ctx.drawImage(p.s,p.x-p.r,p.y-p.r,p.r*2,p.r*2);
     }
-    requestAnimationFrame(frame);
-  })();
+    ctx.globalAlpha=1;
+    if(parts.length) requestAnimationFrame(frame); else { running=false; ctx.clearRect(0,0,W,H); }   // sleep when idle
+  }
 }
 /* scroll motion (AOS-style, GSAP-driven): headings rise word by word out of a mask, eyebrow rules
    draw in, and card groups enter with per-group choreography. Runs again after each hydrate so
@@ -1004,7 +1033,7 @@ const MOTION_GROUPS=[
   [".contact-actions .btn",{y:26,scale:.9},"back.out(1.8)"]
 ];
 function animateGroups(){
-  if(!hasGSAP()||matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(CALM||!hasGSAP()||matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   MOTION_GROUPS.forEach(([sel,from,ease])=>{
     const nodes=[...document.querySelectorAll(sel)].filter(n=>!n.dataset.mo); if(!nodes.length) return;
     nodes.forEach((n,i)=>{ n.dataset.mo=1; gsap.set(n,{opacity:0,...(typeof from==="function"?from(i):from)}); });
@@ -1015,8 +1044,10 @@ function animateGroups(){
 function initMotion(){
   if(!hasGSAP()||matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   /* reading-progress bar along the top edge */
+  if(CALM) return;   // phones: calm mode — no progress bar or decorative scroll motion
   const bar=document.createElement("div"); bar.className="scroll-prog"; bar.setAttribute("aria-hidden","true"); document.body.appendChild(bar);
   gsap.to(bar,{scaleX:1,ease:"none",scrollTrigger:{start:0,end:"max",scrub:.25}});
+  if(CALM) return;   // phones: just the progress bar; blocks use the simple fade-up reveal
   document.querySelectorAll(".sec-head h2").forEach(h=>{
     h.setAttribute("aria-label",h.textContent.trim());
     h.innerHTML=h.textContent.trim().split(/\s+/).map(w=>`<span class="wm" aria-hidden="true"><span class="wi">${esc(w)}</span></span>`).join(" ");
@@ -1033,37 +1064,7 @@ function initMotion(){
     scrollTrigger:{trigger:".story",start:"top 95%",end:"top 35%",scrub:.6}});
   animateGroups();
 }
-/* touch screens get the abir colours too: a burst on every tap and a light trail while the finger drags */
-function initTouchAbir(){
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if(!matchMedia("(hover: none), (pointer: coarse)").matches) return;
-  const COLORS=["233,30,99","255,87,34","255,193,7","76,175,80","33,150,243","156,39,176","255,64,129","0,188,212"];
-  const cv=document.createElement("canvas"); cv.setAttribute("aria-hidden","true");
-  cv.style.cssText="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9500";
-  document.body.appendChild(cv);
-  const ctx=cv.getContext("2d"), dpr=Math.min(devicePixelRatio||1,2);
-  let W=0,H=0,parts=[],running=false,last={x:0,y:0,t:0};
-  const size=()=>{ W=innerWidth; H=innerHeight; cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };
-  size(); addEventListener("resize",size);
-  const spawn=(x,y,n,sp)=>{ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, s=(.5+Math.random())*sp;
-    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-.3,r:4+Math.random()*7,life:1,col:COLORS[Math.random()*COLORS.length|0]}); }
-    if(!running){ running=true; requestAnimationFrame(frame); } };
-  function frame(){
-    ctx.clearRect(0,0,W,H);
-    parts=parts.filter(p=>p.life>.03).slice(-160);
-    for(const p of parts){
-      p.x+=p.vx; p.y+=p.vy; p.vx*=.95; p.vy=p.vy*.95-.01; p.r+=.25; p.life*=.95;
-      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
-      g.addColorStop(0,`rgba(${p.col},${(p.life*.55).toFixed(3)})`); g.addColorStop(1,`rgba(${p.col},0)`);
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill();
-    }
-    if(parts.length) requestAnimationFrame(frame); else { running=false; ctx.clearRect(0,0,W,H); }
-  }
-  addEventListener("touchstart",e=>{ const t=e.touches[0]; if(t){ spawn(t.clientX,t.clientY,12,2.6); last={x:t.clientX,y:t.clientY,t:performance.now()}; } },{passive:true});
-  addEventListener("touchmove",e=>{ const t=e.touches[0]; if(!t) return; const now=performance.now();
-    if(Math.hypot(t.clientX-last.x,t.clientY-last.y)>18||now-last.t>60){ spawn(t.clientX,t.clientY,2,1.2); last={x:t.clientX,y:t.clientY,t:now}; } },{passive:true});
-}
-function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); initSvcSwipe(); initMotion(); initTouchAbir(); refreshLive();
+function boot(){ initGsap(); initParticlePortrait(); initAbirCursor(); initPreloader(()=>{ if(window.__heroIntro) window.__heroIntro.play(); if(hasGSAP()) ScrollTrigger.refresh(); }); hydrate(); initStory(); initSkate(); initFaq(); initChrome(); initButtonFX(); initSvcTabs(); initSvcSwipe(); initMotion(); refreshLive();
   if(hasGSAP()) setTimeout(()=>ScrollTrigger.refresh(),400);
 }
 async function refreshLive(){

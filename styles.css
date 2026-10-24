@@ -1854,3 +1854,20 @@ main > section.story{overflow:clip;padding-top:64px!important;padding-bottom:48p
 .sp-disc{width:min(100%,520px)}
 @media(max-width:1100px) and (min-width:861px){.sp-disc{width:min(100%,420px)}}
 @media(max-width:860px){.story-portrait{padding:20px 0 8px}.sp-disc{width:min(86vw,380px)}}
+/* perf: drift the experience dot grid with a composited transform (no per-frame repaint),
+   and soften the side glows with the gradient itself instead of a live blur filter */
+#experience::after{inset:auto 0 0 0;top:0;height:calc(100% + 220px);animation:xpDotsT 18s linear infinite;will-change:transform}
+@keyframes xpDotsT{to{transform:translateY(-220px)}}
+.xp-glow{filter:none}
+.xp-glow.l{background:radial-gradient(closest-side,rgba(111,163,255,.32),rgba(111,163,255,.12) 55%,transparent)}
+.xp-glow.r{background:radial-gradient(closest-side,rgba(167,139,250,.26),rgba(167,139,250,.1) 55%,transparent)}
+@media(prefers-reduced-motion:reduce){#experience::after{animation:none}}
+
+/* ---------- phones / touch: calm mode — no decorative loops, no live glass blur ---------- */
+@media (max-width:760px), (pointer:coarse){
+  .snow,.xp-glow{display:none!important}
+  #experience::after{display:none!important}
+  .sp-chip,.fq-live,.about-badge .d,.hero-glow,.svc-swipe b,.btn-blue,.btn-out,.navpill,.about-badge{animation:none!important}
+  *,*::before,*::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .story-copy,.fq-side{background:rgba(246,249,253,.96)!important}
+}
